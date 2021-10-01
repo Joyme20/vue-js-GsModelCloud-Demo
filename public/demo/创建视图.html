@@ -5,24 +5,23 @@
     <meta charset="UTF-8">
     <title>创建Viewer实例</title>
 
-    <script src="http://120.78.129.125:8111/js/jquery.js"></script>
-    <script src="http://120.78.129.125:8111/js/gs.dev.js"></script>
-    <script src="http://120.78.129.125:8111/js/longan/longan.js"></script>
 
 </head>
 
 <body style="margin:0px">
     <div>
-        <div id="viewer">
+        <div id="viewerWrapper">
         </div>
     </div>
 
+    <script src="https://8.134.85.254:8012/index.js"></script>
     <script type="text/javascript">
-    window.onload = function () {
-        window.BimAirSDKLoader.onReady().then(() => {
-            let viewer = new window.BimAir.Viewer("viewer");
-        });
-    }
+        window.onload = function () {
+            window.BimAir.InitViewerWrapper("#viewerWrapper");
+            window.BimAirSDKLoader.onReady().then(() => {
+                let viewer = new window.BimAir.Viewer("viewer");
+            });
+        }
     </script>
 
 </body>

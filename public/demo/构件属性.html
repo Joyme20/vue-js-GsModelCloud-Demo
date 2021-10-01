@@ -56,37 +56,30 @@
 </head>
 
 <body style="margin:0px">
-    <div>
-        <div id="viewer">
-        </div>
-        <div class="search-box">
-            <div class="search">
-                <input type="text" placeholder="请输入构件id" name="" id="searchId" value="" />
-                <button onclick="searchClick('id')"><i>id搜索构件</i></button>
-            </div>
-            <div class="search">
-                <input type="text" placeholder="请输入构件name" name="" id="searchName" value="" />
-                <button onclick="searchClick('name')"><i>name搜索构件</i></button>
-            </div>
-            <div>屋顶id和name均为243274</div>
-        </div>
-        <div class="component-box">
-            <div class="title">构件列表：</div>
-            <div class="component-list"></div>
-        </div>
-    </div>
-<script src="https://8.134.85.254:8012/index.js"></script>
+
+    <style>
+        #viewerWrapper {
+            height: 100vh;
+            position: relative;
+        }
+    </style>
+    <div id="viewerWrapper"></div>
+
+
+    <script src="https://8.134.85.254:8012/index.js"></script>
     <script type="text/javascript">
-    window.onload = function () {
-        window.BimAirSDKLoader.onReady().then(() => {
-            let viewer = new window.BimAir.Viewer("viewer");
-            viewer.loadLocalModel("./别墅.gsl","别墅").then(() => {     
-                let lightModel = viewer.getLightModel("别墅");     
-                let properties = lightModel.getComponentPropertiesById("243274");
-                alert(JSON.stringify(properties));
+        window.onload = function () {
+            window.BimAir.InitViewerWrapper("#viewerWrapper");
+
+            window.BimAirSDKLoader.onReady().then(() => {
+                let viewer = new window.BimAir.Viewer("viewer");
+                viewer.loadLocalModel("./别墅.gsl", "别墅").then(() => {
+                    let lightModel = viewer.getLightModel("别墅");
+                    let properties = lightModel.getComponentPropertiesById("243274");
+                    alert(JSON.stringify(properties));
+                });
             });
-        });
-    }  
+        }
     </script>
 
 </body>

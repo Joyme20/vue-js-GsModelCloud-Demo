@@ -15,34 +15,37 @@
         padding: 0;
     }
 </style>
+
 <body>
-<noscript>
-    <strong>We're sorry but typescript-test doesn't work properly without JavaScript enabled. Please enable it to
-        continue.</strong>
-</noscript>
-<style>
-    #viewerWrapper{
-        height: 100vh;
-        position: relative;
-    }
-</style>
-<div id="viewerWrapper"></div>
-<script src="https://8.134.85.254:8012/index.js"></script>
-<script>
-    window.onload = function () {
-        window.BimAirSDKLoader.onReady().then(() => {
-            let viewer = window.BimAir.createViewer();
-            viewer.loadModel("614c3877623f1b5e3826a402");  
-            viewer.addEventListener(BimAir.Viewer.ViewerEventType.leftButtonDown, getData);    
-        });
-    }
+    <noscript>
+        <strong>We're sorry but typescript-test doesn't work properly without JavaScript enabled. Please enable it to
+            continue.</strong>
+    </noscript>
+    <style>
+        #viewerWrapper {
+            height: 100vh;
+            position: relative;
+        }
+    </style>
+    <div id="viewerWrapper"></div>
+    <script src="https://8.134.85.254:8012/index.js"></script>
+    <script>
+        window.onload = function () {
+            window.BimAir.InitViewerWrapper("#viewerWrapper");
 
-    function getData(sender, event) {
-        console.log(sender);
-        console.log(event);
-    }
+            window.BimAirSDKLoader.onReady().then(() => {
+                let viewer = window.BimAir.createViewer();
+                viewer.loadModel("614c3877623f1b5e3826a402");
+                viewer.addEventListener(BimAir.Viewer.ViewerEventType.leftButtonDown, getData);
+            });
+        }
 
-</script>
+        function getData(sender, event) {
+            console.log(sender);
+            console.log(event);
+        }
+
+    </script>
 </body>
 
 </html>
