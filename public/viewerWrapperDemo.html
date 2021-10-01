@@ -27,16 +27,17 @@
     }
 </style>
 <div id="viewerWrapper"></div>
-<!--<script src="https://8.134.85.254:8012/index.js"></script>-->
-<!-- <script src="https://8.134.85.254:8012/index.js"></script> -->
-<script src="http://localhost:9000/index.js"></script>
+<script src="https://8.134.85.254:8012/index.js" async></script>
 <script>
     window.onload = function () {
-        LonganSDK.loader.loadModel("614c3877623f1b5e3826a402")
-        //     .then(viewModel=>{
-        //     console.log(viewModel)
-        // })
-    }
+        window.BimAir.InitViewerWrapper("#viewerWrapper");
+
+         window.BimAirSDKLoader.onReady().then(() => {
+          let viewer = new window.BimAir.Viewer("viewer");
+          viewer.loadModel("614c3877623f1b5e3826a402")
+        });
+        }
+  
 </script>
 </body>
 
