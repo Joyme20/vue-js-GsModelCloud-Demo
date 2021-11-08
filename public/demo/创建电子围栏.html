@@ -15,14 +15,13 @@
         padding: 0;
     }
 </style>
-
 <body>
 <noscript>
     <strong>We're sorry but typescript-test doesn't work properly without JavaScript enabled. Please enable it to
         continue.</strong>
 </noscript>
 <style>
-    #viewerWrapper {
+    #viewerWrapper{
         height: 100vh;
         position: relative;
     }
@@ -35,12 +34,17 @@
 
         window.BimAirSDKLoader.onReady().then(() => {
             let viewer = new window.BimAir.Viewer("viewer");
-            viewer.loadLocalModel("./别墅.gsl", "别墅").then(() => {
-                let model = viewer.getLightModel("别墅");
-                model.setPosition(1000, 1000, 1);
-            });
+            let path = [ 
+              0.0, 0.0, 0 ,
+              0.0, 200.0, 0 ,
+              100.0, 300.0, 0 ,
+              300.0, 100.0, 0 ,
+              0.0, 0.0, 0 ,
+            ];
+            let wallEffectConfig = new window.BimAir.Animation.WallEffectConfig(viewer, path , 10);
+            let wallEffect = new window.BimAir.Animation.WallEffect(wallEffectConfig);
         });
-    }
+    }   
 </script>
 </body>
 

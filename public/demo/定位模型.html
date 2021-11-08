@@ -1,14 +1,12 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 
 <head>
     <meta charset="UTF-8">
-    <title>构件搜索实例</title>
-
+    <title>NWH-BIMCloud</title>
 </head>
 
 <body style="margin:0px">
-
 <style>
     #viewerWrapper {
         height: 100vh;
@@ -16,8 +14,6 @@
     }
 </style>
 <div id="viewerWrapper"></div>
-
-
 <script src="https://8.134.85.254:8012/index.js"></script>
 <script type="text/javascript">
     window.onload = function () {
@@ -26,9 +22,10 @@
         window.BimAirSDKLoader.onReady().then(() => {
             let viewer = new window.BimAir.Viewer("viewer");
             viewer.loadLocalModel("./别墅.gsl", "别墅").then(() => {
-                let lightModel = viewer.getLightModel("别墅");
-                let properties = lightModel.getComponentPropertiesById("243274");
-                alert(JSON.stringify(properties));
+                viewer.loadLocalModel("./human.gsl", "human").then(() => {
+                    let lightModel = viewer.getLightModel("human");
+                    viewer.locate(lightModel);
+                });
             });
         });
     }

@@ -9,20 +9,23 @@
 </head>
 
 <body style="margin:0px">
-    <div>
-        <div id="viewerWrapper">
-        </div>
-    </div>
+<style>
+    #viewerWrapper {
+        height: 100vh;
+        position: relative;
+    }
+</style>
+<div id="viewerWrapper"></div>
 
-    <script src="https://8.134.85.254:8012/index.js"></script>
-    <script type="text/javascript">
-        window.onload = function () {
-            window.BimAir.InitViewerWrapper("#viewerWrapper");
-            window.BimAirSDKLoader.onReady().then(() => {
-                let viewer = new window.BimAir.Viewer("viewer");
-            });
-        }
-    </script>
+<script src="https://8.134.85.254:8012/index.js"></script>
+<script type="text/javascript">
+    window.onload = function () {
+        window.BimAir.InitViewerWrapper("#viewerWrapper");
+        window.BimAirSDKLoader.onReady().then(() => {
+            let viewer = new window.BimAir.Viewer("viewer");
+        });
+    }
+</script>
 
 </body>
 
