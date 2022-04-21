@@ -1,11 +1,20 @@
 <template>
   <div id="app">
-    <div id="viewerWrapper"></div>
+    <div id="viewerWrapper">
+      <viewerWrapper elementId="viewer" />
+    </div>
   </div>
 </template>
 
 <script>
-// import viewerWrapper from "viewer-wrapper/ViewerWrapper.umd.js";
+import Vue from "vue";
+// import BimAir from "../public/js/ViewerWrapper.umd.js";
+// import "../public/js/ViewerWrapper.css";
+
+import BimAir from "gs-viewer-wrapper";
+import "gs-viewer-wrapper/ViewerWrapper.css";
+Vue.use(BimAir.ViewerWrapper);
+
 export default {
   name: "App",
   components: {},
@@ -19,67 +28,21 @@ export default {
   },
 
   mounted() {
-    // this.loadScript("https://8.134.85.254:8012/index.js");
+    let options = {
+      elementId: "viewer",
+      id: "6253e9d6b0545a0a6e49bf85",
+      modelService: "http://8.134.85.254:9032/api",
+      fileService: "http://8.134.85.254:9040/api",
+    };
 
-    let timer = setInterval(() => {
-      if (window.BimAir) {
-        window.BimAir.InitViewerWrapper("#viewerWrapper");
-
-        window.BimAirSDKLoader.onReady().then(() => {
-          // let viewer = new window.BimAir.Viewer("viewer");
-          // viewer.loadModel("616077290b8d484a0a64b7a8");
-          // // viewer.loadLocalModel("./别墅.gsl", "别墅").then(() => {});
-
-          let viewer = new window.BimAir.Viewer("viewer");
-            let versionId = "617bb95f0f7c846f7cb38f16";
-
-            viewer.loadModel(versionId).then(() => {
-                let labelList = [{properties: "属性", position: [0, 0, 0]}, {
-                    properties: "属性1",
-                    position: [20, 20, 20]
-                }]
-                let labelArr = []
-                let viewerWrapper = document.getElementsByClassName("viewer-wrapper")[0]
-                labelList.forEach((item, index) => {
-                    // let div = document.createElement("div")
-                    // div.style.position = "absolute"
-                    // div.style.width = "50px"
-                    // div.style.height = "50px"
-                    // div.style.background = "#ff0000"
-                    // div.addEventListener("click",()=>{
-                    //     alert(labelList[index].properties)
-                    // })
-                    // viewerWrapper.appendChild(div)
-                    // labelArr.push(div)
-
-                    let img = document.createElement("img")
-                    img.src=require("./assets/label.gif")
-                    img.style.position = "absolute"
-                    img.style.width = "50px"
-                    img.style.height = "50px"
-                    img.style.background = "#ff0000"
-                    img.addEventListener("click",()=>{
-                        alert(labelList[index].properties)
-                    })
-                    viewerWrapper.appendChild(img)
-                    labelArr.push(img)
-                })
-                console.log(viewerWrapper)
-
-                let positionList = labelList.map(item=>item.position)
-
-                viewer.createLabel(positionList, ( pixelPos) => {
-                    labelArr.forEach((div,i) => {
-                        labelArr[i].style.left = pixelPos[i][0] + "px"
-                        labelArr[i].style.top = pixelPos[i][1] + "px"
-                    })
-                })
-            })
-        });
-
-        clearInterval(timer);
-      }
-    }, 100);
+    BimAir.Loader().then(() => {
+      let viewer = new BimAir.Viewer(options);
+      viewer.loadModels(["id222222"], true).then(() => {
+        // this.projectName = viewer.renderObject.name;
+      });
+      // this.modelName = viewer.renderObject.name
+      // console.log("viewer-------", viewer)
+    });
   },
 };
 </script>
@@ -99,6 +62,5 @@ export default {
 
 #viewerWrapper {
   height: 100vh;
-  
 }
 </style>
