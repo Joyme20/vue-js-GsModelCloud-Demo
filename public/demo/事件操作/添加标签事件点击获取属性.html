@@ -6,7 +6,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-    <title>NWH-BIMCloud</title>
+    <link rel="stylesheet" href="https://static.graphicstone.com/js/ViewerWrapper.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <script src="https://static.graphicstone.com/js/ViewerWrapper.umd.min.js"></script>
+
 </head>
 
 <body>
@@ -17,29 +20,38 @@
             height: 100vh;
         }
 
-        #viewerWrapper {
+        #app {
             height: 100vh;
             position: relative;
         }
     </style>
-    <div id="viewerWrapper"></div>
-    <script src="https://static.graphicstone.com/index.js"></script>
-    <script>
-        window.onload = function () {
-            window.BimAir.InitViewerWrapper("#viewerWrapper");
+    <div id="app">
+        <viewer-wrapper elementId="viewer" style="height: 100%; width: 100%" />
+    </div>
 
-            window.BimAirSDKLoader.onReady().then(() => {
-                let viewer = new window.BimAir.Viewer("viewer");
-                let modelId = "623d1e482080ec29df50884a";
+    <script type="text/javascript">
+        new Vue({
+            el: '#app',
+        });
 
-                viewer.loadModel(modelId).then(() => {
-                    viewer.setViewMode(window.BimAir.Viewer.ViewMode.Iso, true);
+        let timer = setTimeout(() => {
+            let options = {
+                // viewerType: "model",
+                elementId: "viewer",
+                // id: "6253e9d6b0545a0a6e49bf85",
+                modelService: "http://8.134.85.254:9032/api",
+                fileService: "http://8.134.85.254:9040/api",
+            }
+            BimAir.Loader({ url: "https://static.graphicstone.com" }).then(() => {
+                let viewer = new BimAir.Viewer(options)
+                let modelId = "624fff10aba44c07ef4b184e";
+                viewer.loadModels(["624fff10aba44c07ef4b184e"]).then((lightModel) => {
                     let labelList = [{ properties: "属性", position: [0, 0, 0] }, {
                         properties: "属性1",
                         position: [20, 20, 20]
                     }]
                     let labelArr = []
-                    let viewerWrapper = document.getElementsByClassName("viewer-wrapper")[0]
+                    let viewerWrapper = document.getElementsByClassName("viewer-wrp")[0]
                     labelList.forEach((item, index) => {
                         let div = document.createElement("div")
                         div.style.position = "absolute"
@@ -65,20 +77,18 @@
 
 
                     //右键按下时禁用标签事件
-                    viewer.addEventListener(
-                        window.BimAir.Viewer.ViewerEventType.rightButtonDown,
+                    viewer.onLButtonDown.add(() => (
                         labelDisable
-                    );
+                    ));
                     function labelDisable(sender, event) {
                         labelArr.forEach((div, i) => {
                             labelArr[i].style.pointerEvents = "none";
                         });
                     }
                     //右键放开时启用标签事件
-                    viewer.addEventListener(
-                        window.BimAir.Viewer.ViewerEventType.rightButtonUp,
+                    viewer.onLButtonUp.add(() => (
                         labelEnable
-                    );
+                    ));
                     function labelEnable(sender, event) {
                         labelArr.forEach((div, i) => {
                             labelArr[i].style.pointerEvents = "auto";
@@ -86,7 +96,7 @@
                     }
                 });
             });
-        }
+        })
 
 
     </script>
