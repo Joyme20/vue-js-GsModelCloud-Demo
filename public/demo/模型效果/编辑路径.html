@@ -8,41 +8,46 @@
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <title>NWH-BIMCloud</title>
 </head>
+
+<body>
 <style>
     body {
-        height: 100vh;
         margin: 0;
         padding: 0;
+        height: 100vh;
     }
-</style>
-<body>
-<noscript>
-    <strong>We're sorry but typescript-test doesn't work properly without JavaScript enabled. Please enable it to
-        continue.</strong>
-</noscript>
-<style>
-    #viewerWrapper{
+
+    #viewerWrapper {
         height: 100vh;
         position: relative;
     }
 </style>
 <div id="viewerWrapper"></div>
-<script src="https://8.134.85.254:8012/index.js"></script>
+<script src="https://static.graphicstone.com/index.js"></script>
 <script>
     window.onload = function () {
         window.BimAir.InitViewerWrapper("#viewerWrapper");
 
         window.BimAirSDKLoader.onReady().then(() => {
+            
             let viewer = new window.BimAir.Viewer("viewer");
             let path = [ 
               0.0, 0.0, 0 ,
-              0.0, 200.0, 0 ,
-              100.0, 300.0, 0 ,
-              300.0, 100.0, 0 ,
-              0.0, 0.0, 0 ,
+              100.0, 100.0, 0 ,
             ];
-            let wallEffectConfig = new window.BimAir.Animation.WallEffectConfig(viewer, path , 10);
-            let wallEffect = new window.BimAir.Animation.WallEffect(wallEffectConfig);
+            let pathEffectConfig = new window.BimAir.Animation.PathEffectConfig(viewer, "路径1", path, 10, 0.1);
+            let pathEffect = new window.BimAir.Animation.PathEffect(pathEffectConfig);
+            pathEffect.createPath().then(()=>{
+                let path1 = viewer.getLightModel("路径1");
+                viewer.fitWorld();
+                viewer.locate(path1);
+            })
+
+            setInterval(()=>{
+                path.push(300*Math.random(),300*Math.random(),0);
+                pathEffect.editPath(path);
+                viewer.updateDisplay();
+            },1000)
         });
     }   
 </script>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+    <title>NWH-BIMCloud</title>
+</head>
+
+<body>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
+
+        #viewerWrapper {
+            height: 100vh;
+            position: relative;
+        }
+    </style>
+    <div id="viewerWrapper"></div>
+    <script src="https://static.graphicstone.com/index.js"></script>
+    <script>
+        window.onload = function () {
+            window.BimAir.InitViewerWrapper("#viewerWrapper");
+
+            window.BimAirSDKLoader.onReady().then(() => {
+                let viewer = new window.BimAir.Viewer("viewer");
+                let modelId = "623d1e482080ec29df50884a";
+
+                viewer.loadModel(modelId).then(() => {
+                    viewer.setViewMode(window.BimAir.Viewer.ViewMode.Iso, true);
+                    let labelList = [{ properties: "属性", position: [0, 0, 0] }, {
+                        properties: "属性1",
+                        position: [20, 20, 20]
+                    }]
+                    let labelArr = []
+                    let viewerWrapper = document.getElementsByClassName("viewer-wrapper")[0]
+                    labelList.forEach((item, index) => {
+                        let div = document.createElement("div")
+                        div.style.position = "absolute"
+                        div.style.width = "50px"
+                        div.style.height = "50px"
+                        div.style.background = "#ff0000"
+                        div.addEventListener("click", () => {
+                            alert(labelList[index].properties)
+                        })
+                        viewerWrapper.appendChild(div)
+                        labelArr.push(div)
+                    })
+                    console.log(viewerWrapper)
+
+                    let positionList = labelList.map(item => item.position)
+
+                    viewer.createLabel(positionList, (pixelPos) => {
+                        labelArr.forEach((div, i) => {
+                            labelArr[i].style.left = pixelPos[i][0] + "px"
+                            labelArr[i].style.top = pixelPos[i][1] + "px"
+                        })
+                    })
+
+
+                    //右键按下时禁用标签事件
+                    viewer.addEventListener(
+                        window.BimAir.Viewer.ViewerEventType.rightButtonDown,
+                        labelDisable
+                    );
+                    function labelDisable(sender, event) {
+                        labelArr.forEach((div, i) => {
+                            labelArr[i].style.pointerEvents = "none";
+                        });
+                    }
+                    //右键放开时启用标签事件
+                    viewer.addEventListener(
+                        window.BimAir.Viewer.ViewerEventType.rightButtonUp,
+                        labelEnable
+                    );
+                    function labelEnable(sender, event) {
+                        labelArr.forEach((div, i) => {
+                            labelArr[i].style.pointerEvents = "auto";
+                        });
+                    }
+                });
+            });
+        }
+
+
+    </script>
+</body>
+
+</html>

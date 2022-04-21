@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>加载服务器模型</title>
+    <link rel="stylesheet" href="https://static.graphicstone.com/js/ViewerWrapper.css">
+    </link>
+
+</head>
+
+<body>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
+
+        #app {
+            height: 100vh;
+            position: relative;
+        }
+    </style>
+    <div id="app">
+        <!-- <div id="viewer">
+        </div> -->
+        <viewer-wrapper elementId="viewer" style="height: 100%; width: 100%" />
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <script src="https://static.graphicstone.com/js/ViewerWrapper.umd.min.js"></script>
+
+    <script type="text/javascript">
+        new Vue({
+            el: '#app',
+        });
+
+        let timer = setTimeout(() => {
+            let options = {
+                // viewerType: "model",
+                elementId: "viewer",
+                // id: "6253e9d6b0545a0a6e49bf85",
+                modelService: "http://8.134.85.254:9032/api",
+                fileService: "http://8.134.85.254:9040/api",
+            }
+            BimAir.Loader({ url: "https://static.graphicstone.com" }).then(() => {
+                let viewer = new BimAir.Viewer(options)
+                let modelId = "624fff10aba44c07ef4b184e";
+                viewer.loadModels(["624fff10aba44c07ef4b184e"]).then((lightModel) => {
+                    let segmentObject = viewer.getComponent(
+                        lightModel[0].modelId,
+                        "243274"
+                    );
+
+                    //隐藏构件
+                    viewer.invisibleManager.invisible([segmentObject]);
+                    //隐藏其他构件
+                    //viewer.invisibleManager.invisibleInvert([segmentObject]);
+                });
+            })
+
+        }, 1000)
+    </script>
+
+</body>
+
+</html>

@@ -8,36 +8,38 @@
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
     <title>NWH-BIMCloud</title>
 </head>
-<style>
-    body {
-        height: 100vh;
-        margin: 0;
-        padding: 0;
-    }
-</style>
 
 <body>
-    <noscript>
-        <strong>We're sorry but typescript-test doesn't work properly without JavaScript enabled. Please enable it to
-            continue.</strong>
-    </noscript>
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
+
         #viewerWrapper {
             height: 100vh;
             position: relative;
         }
     </style>
     <div id="viewerWrapper"></div>
-    <script src="https://8.134.85.254:8012/index.js"></script>
+    <script src="https://static.graphicstone.com/index.js"></script>
     <script>
         window.onload = function () {
             window.BimAir.InitViewerWrapper("#viewerWrapper");
 
             window.BimAirSDKLoader.onReady().then(() => {
                 let viewer = new window.BimAir.Viewer("viewer");
-                viewer.loadLocalModel("./别墅.gsl", "别墅").then(() => {
-                    let model = viewer.getLightModel("别墅");
-                    model.setColor(1, 1, 1, 0.5);
+                viewer.loadLocalModel("./别墅.gsl", "别墅").then((lightModel) => {
+                    viewer.setViewMode(window.BimAir.Viewer.ViewMode.Iso, true);
+
+                    setTimeout(() => {
+                        viewer.removeModel("别墅");
+                    }, 1000);
+                });
+
+                let model2 = viewer.loadLocalModel("./别墅.gsl", "别墅1").then((lightModel) => {
+                    console.log(lightModel);
                 });
             });
         }

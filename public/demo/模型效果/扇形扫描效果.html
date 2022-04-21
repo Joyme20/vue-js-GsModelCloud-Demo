@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>环状扫描效果</title>
+</head>
+
+<body>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+    }
+
+    #viewerWrapper {
+        height: 100vh;
+        position: relative;
+    }
+</style>
+<div id="viewerWrapper"></div>
+<script src="https://static.graphicstone.com/index.js"></script>
+<script type="text/javascript">
+    window.onload = function () {
+        window.BimAir.InitViewerWrapper("#viewerWrapper");
+
+        window.BimAirSDKLoader.onReady().then(() => {
+            let viewer = new window.BimAir.Viewer("viewer");
+            viewer.loadModel("61ebdd58250d695aef4c7e32").then(() => {
+                viewer.setViewMode(window.BimAir.Viewer.ViewMode.Iso, true);
+                let lightModel = viewer.getLightModel("别墅.gsz");
+                let fanScanEffectConfig = new window.BimAir.Animation.FanScanEffectConfig(
+                    viewer,
+                    Math.PI,
+                    new Float32Array([17, 218, 183]),
+                    new Float32Array([0, 0, 0]),
+                    0.2,
+                    new Float32Array([5, 5, 0]),
+                    20,
+                    2
+                );
+                let fanScanEffect = new window.BimAir.Animation.FanScanEffect(fanScanEffectConfig);
+
+            });
+
+        });
+    }
+</script>
+
+</body>
+
+</html>
