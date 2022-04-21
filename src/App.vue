@@ -37,14 +37,7 @@ export default {
 
     BimAir.Loader().then(() => {
       let viewer = new BimAir.Viewer(options);
-      // viewer.loadModel().then(() => {
-      //   // this.projectName = viewer.renderObject.name;
-      // });
-      viewer.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {
-        // this.projectName = viewer.renderObject.name;
-      });
-      // this.modelName = viewer.renderObject.name
-      // console.log("viewer-------", viewer)
+      viewer.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {});
     });
   },
 };
