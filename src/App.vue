@@ -11,8 +11,8 @@ import Vue from "vue";
 // import BimAir from "../public/js/ViewerWrapper.umd.js";
 // import "../public/js/ViewerWrapper.css";
 
-import BimAir from "gs-viewer-wrapper";
-import "gs-viewer-wrapper/lib/ViewerWrapper.css";
+import BimAir from "gs-bim-air";
+import "gs-bim-air/lib/ViewerWrapper.css";
 Vue.use(BimAir.ViewerWrapper);
 
 export default {
