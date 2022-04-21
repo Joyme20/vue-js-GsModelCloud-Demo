@@ -30,7 +30,6 @@ export default {
   mounted() {
     let options = {
       elementId: "viewer",
-      id: "6253e9d6b0545a0a6e49bf85",
       modelService: "http://8.134.85.254:9032/api",
       fileService: "http://8.134.85.254:9040/api",
     };
