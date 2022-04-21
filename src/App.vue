@@ -2,6 +2,7 @@
   <div id="app">
     <div id="viewerWrapper">
       <viewerWrapper elementId="viewer" />
+      <viewerWrapper elementId="viewer2" />
     </div>
   </div>
 </template>
@@ -33,10 +34,21 @@ export default {
       modelService: "http://8.134.85.254:9032/api",
       fileService: "http://8.134.85.254:9040/api",
     };
+    let options2 = {
+      elementId: "viewer2",
+      modelService: "http://8.134.85.254:9032/api",
+      fileService: "http://8.134.85.254:9040/api",
+    };
 
     BimAir.Loader().then(() => {
       let viewer = new BimAir.Viewer(options);
-      viewer.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {});
+      let viewer2 = new BimAir.Viewer(options2);
+      viewer.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {
+        viewer.fitWorld();
+      });
+      viewer2.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {
+        viewer2.fitWorld();
+      });
     });
   },
 };
@@ -52,7 +64,7 @@ export default {
   margin: 0;
   padding: 0;
   height: 100vh;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 #viewerWrapper {
