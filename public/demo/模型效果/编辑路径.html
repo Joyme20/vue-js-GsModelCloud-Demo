@@ -10,47 +10,47 @@
 </head>
 
 <body>
-<style>
-    body {
-        margin: 0;
-        padding: 0;
-        height: 100vh;
-    }
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
 
-    #viewerWrapper {
-        height: 100vh;
-        position: relative;
-    }
-</style>
-<div id="viewerWrapper"></div>
-<script src="https://static.graphicstone.com/index.js"></script>
-<script>
-    window.onload = function () {
-        window.BimAir.InitViewerWrapper("#viewerWrapper");
+        #bimAir {
+            height: 100vh;
+            position: relative;
+        }
+    </style>
+    <div id="bimAir"></div>
+    <script src="https://static.graphicstone.com/index.js"></script>
+    <script>
+        window.onload = function () {
+            window.BimAir.InitBimAir("#bimAir");
 
-        window.BimAirSDKLoader.onReady().then(() => {
-            
-            let viewer = new window.BimAir.Viewer("viewer");
-            let path = [ 
-              0.0, 0.0, 0 ,
-              100.0, 100.0, 0 ,
-            ];
-            let pathEffectConfig = new window.BimAir.Animation.PathEffectConfig(viewer, "路径1", path, 10, 0.1);
-            let pathEffect = new window.BimAir.Animation.PathEffect(pathEffectConfig);
-            pathEffect.createPath().then(()=>{
-                let path1 = viewer.getLightModel("路径1");
-                viewer.fitWorld();
-                viewer.locate(path1);
-            })
+            window.BimAirSDKLoader.onReady().then(() => {
 
-            setInterval(()=>{
-                path.push(300*Math.random(),300*Math.random(),0);
-                pathEffect.editPath(path);
-                viewer.updateDisplay();
-            },1000)
-        });
-    }   
-</script>
+                let viewer = new window.BimAir.Viewer("viewer");
+                let path = [
+                    0.0, 0.0, 0,
+                    100.0, 100.0, 0,
+                ];
+                let pathEffectConfig = new window.BimAir.Animation.PathEffectConfig(viewer, "路径1", path, 10, 0.1);
+                let pathEffect = new window.BimAir.Animation.PathEffect(pathEffectConfig);
+                pathEffect.createPath().then(() => {
+                    let path1 = viewer.getLightModel("路径1");
+                    viewer.fitWorld();
+                    viewer.locate(path1);
+                })
+
+                setInterval(() => {
+                    path.push(300 * Math.random(), 300 * Math.random(), 0);
+                    pathEffect.editPath(path);
+                    viewer.updateDisplay();
+                }, 1000)
+            });
+        }   
+    </script>
 </body>
 
 </html>

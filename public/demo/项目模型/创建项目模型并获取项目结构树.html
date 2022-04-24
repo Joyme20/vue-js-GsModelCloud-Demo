@@ -9,40 +9,40 @@
 </head>
 
 <body>
-<style>
-    body {
-        margin: 0;
-        padding: 0;
-        height: 100vh;
-    }
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
 
-    #viewerWrapper {
-        height: 100vh;
-        position: relative;
-    }
-</style>
-<div id="viewerWrapper"></div>
+        #bimAir {
+            height: 100vh;
+            position: relative;
+        }
+    </style>
+    <div id="bimAir"></div>
 
-<script src="https://static.graphicstone.com/index.js"></script>
-<script type="text/javascript">
+    <script src="https://static.graphicstone.com/index.js"></script>
+    <script type="text/javascript">
 
-    window.onload = function () {
-        window.BimAir.initProjectViewerWrapper("#viewerWrapper");
-        window.BimAirSDKLoader.onReady().then(() => {
+        window.onload = function () {
+            window.BimAir.initProjectBimAir("#bimAir");
+            window.BimAirSDKLoader.onReady().then(() => {
 
-            let projectId = "6177734fcb3be87176691f92";
-            let projectViewer = new window.BimAir.ProjectViewer(projectId);
-            projectViewer.loadModel(projectId).then(() => {
+                let projectId = "6177734fcb3be87176691f92";
+                let projectViewer = new window.BimAir.ProjectViewer(projectId);
+                projectViewer.loadModel(projectId).then(() => {
 
+                });
+
+                let projectStructure = projectViewer.structureTree;
+                projectStructure.getProjectData().then((data) => {
+                    console.log("projectStructure", data)
+                })
             });
-
-            let projectStructure = projectViewer.structureTree;
-            projectStructure.getProjectData().then((data) => {
-                console.log("projectStructure", data)
-            })
-        });
-    }
-</script>
+        }
+    </script>
 
 </body>
 

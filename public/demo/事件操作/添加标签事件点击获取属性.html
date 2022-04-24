@@ -6,9 +6,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-    <link rel="stylesheet" href="https://static.graphicstone.com/js/ViewerWrapper.css">
+    <link rel="stylesheet" href="https://static.graphicstone.com/js/BimAir.css">
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
-    <script src="https://static.graphicstone.com/js/ViewerWrapper.umd.min.js"></script>
+    <script src="https://static.graphicstone.com/js/BimAir.umd.min.js"></script>
 
 </head>
 
@@ -51,7 +51,7 @@
                         position: [20, 20, 20]
                     }]
                     let labelArr = []
-                    let viewerWrapper = document.getElementsByClassName("viewer-wrp")[0]
+                    let bimAir = document.getElementsByClassName("viewer-wrp")[0]
                     labelList.forEach((item, index) => {
                         let div = document.createElement("div")
                         div.style.position = "absolute"
@@ -61,22 +61,27 @@
                         div.addEventListener("click", () => {
                             alert(labelList[index].properties)
                         })
-                        viewerWrapper.appendChild(div)
+                        bimAir.appendChild(div)
                         labelArr.push(div)
                     })
-                    console.log(viewerWrapper)
+                    console.log(bimAir)
 
                     let positionList = labelList.map(item => item.position)
 
-                    viewer.createLabel(positionList, (pixelPos) => {
+                    function updateLabels() {
+                        let pixelPos = viewer.worldPointToPixelPoint(positionList)
                         labelArr.forEach((div, i) => {
                             labelArr[i].style.left = pixelPos[i][0] + "px"
                             labelArr[i].style.top = pixelPos[i][1] + "px"
                         })
-                    })
+                    }
 
+                    // 在视图刷新事件里添加更新标签的方法
+                    viewer.sceneCameraChanged.add(updateLabels)
+                    // 移除更新标签的方法
+                    // viewer.sceneCameraChanged.remove(updateLabels)
 
-                    //右键按下时禁用标签事件
+                    //右键按下时禁用标签方法
                     viewer.onLButtonDown.add(() => (
                         labelDisable
                     ));
@@ -85,7 +90,7 @@
                             labelArr[i].style.pointerEvents = "none";
                         });
                     }
-                    //右键放开时启用标签事件
+                    //右键放开时启用标签方法
                     viewer.onLButtonUp.add(() => (
                         labelEnable
                     ));

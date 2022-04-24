@@ -7,44 +7,44 @@
 </head>
 
 <body>
-<style>
-    body {
-        margin: 0;
-        padding: 0;
-        height: 100vh;
-    }
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
 
-    #viewerWrapper {
-        height: 100vh;
-        position: relative;
-    }
-</style>
-<div id="viewerWrapper"></div>
-<script src="https://static.graphicstone.com/index.js"></script>
-<script type="text/javascript">
-    window.onload = function () {
-        window.BimAir.InitViewerWrapper("#viewerWrapper");
+        #bimAir {
+            height: 100vh;
+            position: relative;
+        }
+    </style>
+    <div id="bimAir"></div>
+    <script src="https://static.graphicstone.com/index.js"></script>
+    <script type="text/javascript">
+        window.onload = function () {
+            window.BimAir.InitBimAir("#bimAir");
 
-        window.BimAirSDKLoader.onReady().then(() => {
-            let viewer = new window.BimAir.Viewer("viewer");
-            viewer.loadModel("61ebdd58250d695aef4c7e32").then(() => {
-                viewer.setViewMode(window.BimAir.Viewer.ViewMode.Iso, true);
-                let lightModel = viewer.getLightModel("别墅.gsz");
-                let circleScanEffectConfig = new window.BimAir.Animation.CircleScanEffectConfig(
-                    viewer,
-                    lightModel,
-                    new Float32Array([17, 218, 183]),
-                    new Float32Array([5, 5, 0]),
-                    20,
-                    2
-                );
-                let circleScanEffect = new window.BimAir.Animation.CircleScanEffect(circleScanEffectConfig);
+            window.BimAirSDKLoader.onReady().then(() => {
+                let viewer = new window.BimAir.Viewer("viewer");
+                viewer.loadModel("61ebdd58250d695aef4c7e32").then(() => {
+                    viewer.setViewMode(window.BimAir.Viewer.ViewMode.Iso, true);
+                    let lightModel = viewer.getLightModel("别墅.gsz");
+                    let circleScanEffectConfig = new window.BimAir.Animation.CircleScanEffectConfig(
+                        viewer,
+                        lightModel,
+                        new Float32Array([17, 218, 183]),
+                        new Float32Array([5, 5, 0]),
+                        20,
+                        2
+                    );
+                    let circleScanEffect = new window.BimAir.Animation.CircleScanEffect(circleScanEffectConfig);
+
+                });
 
             });
-
-        });
-    }
-</script>
+        }
+    </script>
 
 </body>
 

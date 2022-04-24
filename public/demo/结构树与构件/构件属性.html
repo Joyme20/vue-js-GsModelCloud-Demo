@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>构件属性</title>
-    <link rel="stylesheet" href="https://static.graphicstone.com/js/ViewerWrapper.css">
+    <link rel="stylesheet" href="https://static.graphicstone.com/js/BimAir.css">
     </link>
 
 </head>
@@ -29,7 +29,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
-    <script src="https://static.graphicstone.com/js/ViewerWrapper.umd.min.js"></script>
+    <script src="https://static.graphicstone.com/js/BimAir.umd.min.js"></script>
 
     <script type="text/javascript">
         new Vue({
@@ -49,14 +49,14 @@
                 let modelId = "624fff10aba44c07ef4b184e";
                 viewer.loadModels(["624fff10aba44c07ef4b184e"]).then((lightModel) => {
                     let segmentObject = viewer.getComponent(
-              lightModel[0].modelId,
-              "243274"
-            );
-            viewer.propertyManager
-              .getProperty(segmentObject)
-              .then((properties) => {
-                console.log(properties);
-              });
+                        lightModel[0].modelId,
+                        "243274"
+                    );
+                    viewer.propertyManager
+                        .getProperty(segmentObject)
+                        .then((properties) => {
+                            console.log(properties);
+                        });
                 });
             })
 

@@ -7,36 +7,36 @@
 </head>
 
 <body>
-<style>
-    body {
-        margin: 0;
-        padding: 0;
-        height: 100vh;
-    }
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
 
-    #viewerWrapper {
-        height: 100vh;
-        position: relative;
-    }
-</style>
-<div id="viewerWrapper"></div>
-<script src="https://static.graphicstone.com/index.js"></script>
-<script type="text/javascript">
-    window.onload = function () {
-        window.BimAir.InitViewerWrapper("#viewerWrapper");
+        #bimAir {
+            height: 100vh;
+            position: relative;
+        }
+    </style>
+    <div id="bimAir"></div>
+    <script src="https://static.graphicstone.com/index.js"></script>
+    <script type="text/javascript">
+        window.onload = function () {
+            window.BimAir.InitBimAir("#bimAir");
 
-        window.BimAirSDKLoader.onReady().then(() => {
-            let viewer = new window.BimAir.Viewer("viewer");
-            let skyboxEffectConfig = new window.BimAir.Animation.SkyboxEffectConfig(
-                viewer
-            );
-            let skyboxEffect = new window.BimAir.Animation.SkyboxEffect(skyboxEffectConfig);
-            skyboxEffect.createSkybox().then(()=>{
-                viewer.updateDisplay();
-            })
-        });
-    }
-</script>
+            window.BimAirSDKLoader.onReady().then(() => {
+                let viewer = new window.BimAir.Viewer("viewer");
+                let skyboxEffectConfig = new window.BimAir.Animation.SkyboxEffectConfig(
+                    viewer
+                );
+                let skyboxEffect = new window.BimAir.Animation.SkyboxEffect(skyboxEffectConfig);
+                skyboxEffect.createSkybox().then(() => {
+                    viewer.updateDisplay();
+                })
+            });
+        }
+    </script>
 
 </body>
 

@@ -14,16 +14,16 @@
             height: 100vh;
         }
 
-        #viewerWrapper {
+        #bimAir {
             height: 100vh;
             position: relative;
         }
     </style>
-    <div id="viewerWrapper"></div>
+    <div id="bimAir"></div>
     <script src="https://static.graphicstone.com/index.js"></script>
     <script type="text/javascript">
         window.onload = function () {
-            window.BimAir.InitViewerWrapper("#viewerWrapper");
+            window.BimAir.InitBimAir("#bimAir");
 
             window.BimAirSDKLoader.onReady().then(() => {
                 let projectId = "61c7e12dfad9a96dd0e2d8b0";
