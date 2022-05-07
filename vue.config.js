@@ -1,3 +1,6 @@
 module.exports = {
-    lintOnSave: false
+    outputDir: "cordovaDemo/www/",
+    assetsDir: "static",
+    lintOnSave: true,
+    productionSourceMap: false,
 }

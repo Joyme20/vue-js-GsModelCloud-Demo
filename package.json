@@ -6,12 +6,14 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "viewerWrapperLocal:splitlocalhost": "node scripts/splitJsFromHtml.js ./viewerWrapperLocal"
+    "viewerWrapperLocal:splitlocalhost": "node scripts/splitJsFromHtml.js ./viewerWrapperLocal",
+    "bundle": "cnpm run build && cd cordovaDemo && cordova run android"
   },
   "dependencies": {
     "axios": "^0.21.4",
     "core-js": "^3.6.5",
-    "gs-bim-air": "^0.0.1",
+    "gs-bim-air": "^0.0.4-1",
+    "gs-longan": "^4.0.20",
     "vue": "^2.6.11"
   },
   "devDependencies": {

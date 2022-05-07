@@ -13,7 +13,7 @@ import Vue from "vue";
 // import "../public/js/ViewerWrapper.css";
 
 import BimAir from "gs-bim-air";
-import "gs-bim-air/lib/ViewerWrapper.css";
+import "gs-bim-air/lib/BimAir.css";
 Vue.use(BimAir.ViewerWrapper);
 
 export default {
@@ -40,16 +40,19 @@ export default {
       fileService: "http://8.134.85.254:9040/api",
     };
 
-    BimAir.Loader().then(() => {
-      let viewer = new BimAir.Viewer(options);
-      let viewer2 = new BimAir.Viewer(options2);
-      viewer.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {
-        viewer.fitWorld();
-      });
-      viewer2.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {
-        viewer2.fitWorld();
-      });
-    });
+    BimAir.Loader({ url: "https://static.graphicstone.com/bimAir" }).then(
+      () => {
+        let viewer = new BimAir.Viewer(options);
+        let viewer2 = new BimAir.Viewer(options2);
+
+        viewer.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {
+          viewer.fitWorld();
+        });
+        viewer2.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {
+          viewer2.fitWorld();
+        });
+      }
+    );
   },
 };
 </script>
