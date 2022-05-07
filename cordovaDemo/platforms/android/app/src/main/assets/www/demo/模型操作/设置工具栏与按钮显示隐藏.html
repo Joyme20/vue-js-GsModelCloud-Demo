@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>设置工具栏与按钮显示隐藏</title>
+</head>
+
+<body>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
+
+        #bimAir {
+            height: 100vh;
+            position: relative;
+        }
+    </style>
+    <div id="bimAir"></div>
+    <script src="https://static.graphicstone.com/index.js"></script>
+    <script type="text/javascript">
+        window.onload = function () {
+            window.BimAir.InitBimAir("#bimAir");
+
+            window.BimAirSDKLoader.onReady().then(() => {
+                let projectId = "61c7e12dfad9a96dd0e2d8b0";
+
+                let options = {
+                    toolbarVisible: {
+                        leftToolbar: true, //左边工具栏
+                        rightToolbar: true, //右边工具栏
+                        bottomToolbar: true, //底部工具栏
+                        structureTree: true, //左边结构树按钮
+                        property: true, //底部属性按钮
+                        viewPoint: true, //底部视点按钮
+                        measure: true, //底部测量按钮
+                        comment: true, //底部批注按钮
+                        label: true, //底部标签按钮
+                        cut: true, //底部按钮
+                        explosion: true, //底部全局爆炸按钮
+                        proExplosion: true, //底部专业按钮
+                        roam: true, //底部漫游按钮
+                        style: true, //底部样式按钮
+                        crash: true, //底部碰撞按钮
+                        floorPlan: true, //底部楼层平面按钮
+                        twoDDrawing: true, //底部二维图纸按钮
+                        snapshoot: true, //底部快照按钮
+                        setting: true, //底部设置按钮
+                    }
+                }
+                let viewer = new window.BimAir.ProjectViewer(projectId, options);
+                viewer.loadModel(projectId).then(() => {
+                });
+            });
+        }
+    </script>
+
+</body>
+
+</html>

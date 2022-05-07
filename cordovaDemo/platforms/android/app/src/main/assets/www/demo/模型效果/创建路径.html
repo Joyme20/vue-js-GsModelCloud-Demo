@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+    <title>NWH-BIMCloud</title>
+</head>
+
+<body>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
+
+        #bimAir {
+            height: 100vh;
+            position: relative;
+        }
+    </style>
+    <div id="bimAir"></div>
+    <script src="https://static.graphicstone.com/index.js"></script>
+    <script>
+        window.onload = function () {
+            window.BimAir.InitBimAir("#bimAir");
+
+            window.BimAirSDKLoader.onReady().then(() => {
+
+                let viewer = new window.BimAir.Viewer("viewer");
+                let path = [
+                    100.0, 100.0, 0,
+                    200.0, 200.0, 0,
+                    300.0, 300.0, 0,
+                    400.0, 400.0, 0,
+                    500.0, 500.0, 0,
+                    600.0, 600.0, 0,
+                    700.0, 700.0, 0
+                ];
+                let pathEffectConfig = new window.BimAir.Animation.PathEffectConfig(viewer, "路径1", path, 10, 0.1);
+                let pathEffect = new window.BimAir.Animation.PathEffect(pathEffectConfig);
+                pathEffect.createPath().then(() => {
+                    let path1 = viewer.getLightModel("路径1");
+                    viewer.fitWorld();
+                    viewer.locate(path1);
+                })
+            });
+        }   
+    </script>
+</body>
+
+</html>
