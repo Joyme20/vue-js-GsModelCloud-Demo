@@ -1711,15 +1711,16 @@ var tempI64;
 // === Body ===
 
 var ASM_CONSTS = {
-  59546: function($0) {Module['firstGLContextExt'] = GL.contexts[$0].GLctx.getExtension('WEBGL_lose_context');},  
- 59638: function() {Module['firstGLContextExt'].loseContext();}
+  62544: function($0) {Module['firstGLContextExt'] = GL.contexts[$0].GLctx.getExtension('WEBGL_lose_context');},  
+ 62636: function() {Module['firstGLContextExt'].loseContext();}
 };
-function After_Asyn_Update_Geometry_Data(view_key){ if (Module.afterAsynUpdateGeometryData) { Module.afterAsynUpdateGeometryData(view_key); } }
-function After_Asyn_Update_Partial_Geometry_Data(view_key,partial_key){ if (Module.afterAsynUpdatePartialGeometryData) { Module.afterAsynUpdatePartialGeometryData(view_key, partial_key); } }
-function After_Asyn_Update_View(view_key){ if (Module.afterAsynUpdateView) { Module.afterAsynUpdateView(view_key); } }
+function After_Asyn_Update_Geometry_Data(view_key,cancelled){ if (Module.afterAsynUpdateGeometryData) { Module.afterAsynUpdateGeometryData(view_key, cancelled); } }
+function After_Asyn_Update_Partial_Geometry_Data(view_key,partial_key,cancelled){ if (Module.afterAsynUpdatePartialGeometryData) { Module.afterAsynUpdatePartialGeometryData(view_key, partial_key, cancelled); } }
+function After_Asyn_Update_View(view_key,cancelled){ if (Module.afterAsynUpdateView) { Module.afterAsynUpdateView(view_key, cancelled); } }
+function After_Collision_Computing(view_key,count){ if (Module.onCollisionComputed) { Module.onCollisionComputed(view_key, count); } }
 function Image_External_Load(view_key,image_key,buffer){ if (Module.onImageExternalLoading) { Module.onImageExternalLoading(view_key, image_key, buffer); } }
-function JS_Collision_Computation_Status(msg){ let str_msg = UTF8ToString(msg); if (Process) { Process.statusChanged.forEach(value => { value(str_msg); }); } }
 function JS_Create_Texture(buffer){ _glGenTextures(1, buffer); if (window.GROWABLE_HEAP_I32) { return GL.textures[GROWABLE_HEAP_I32()[buffer >> 2]]; } else { return GL.textures[HEAP32[buffer >> 2]]; } }
+function On_Collision_Computing(view_key,total,current){ if (Module.onCollisionComputing) { Module.onCollisionComputing(view_key, total, current); } }
 function Shader_Object_CreateVao(no,key,pos_count,idx_count,positions,indexes,normals,texcoords,colors){ let pos = new Float32Array(pos_count * 3); pos.set(Module.HEAPF32.subarray(positions/4, positions/4 + pos_count * 3)); let idx = new Int32Array(idx_count); idx.set(Module.HEAP32.subarray(indexes / 4, indexes / 4 + idx_count)); let nor = new Float32Array(pos_count * 3); nor.set(Module.HEAPF32.subarray(normals / 4, normals / 4 + pos_count * 3)); let tex = null; if (texcoords != 0) { tex = new Float32Array(pos_count * 2); tex.set(Module.HEAPF32.subarray(texcoords / 4, texcoords / 4 + pos_count * 2)); } let col = null; if (colors != 0) { col = new Float32Array(pos_count * 4); col.set(Module.HEAPF32.subarray(colors / 4, colors / 4 + pos_count * 4)); } Module.shaderObjects[no].createVao(key, pos, idx, nor, tex, col); }
 function Shader_Object_Init(no,program){ Module.shaderObjects[no].initGL(program); }
 function Shader_Object_Render(no,time){ Module.shaderObjects[no].update(time); }
@@ -5811,9 +5812,10 @@ var asmLibraryArg = {
   "After_Asyn_Update_Geometry_Data": After_Asyn_Update_Geometry_Data,
   "After_Asyn_Update_Partial_Geometry_Data": After_Asyn_Update_Partial_Geometry_Data,
   "After_Asyn_Update_View": After_Asyn_Update_View,
+  "After_Collision_Computing": After_Collision_Computing,
   "Image_External_Load": Image_External_Load,
-  "JS_Collision_Computation_Status": JS_Collision_Computation_Status,
   "JS_Create_Texture": JS_Create_Texture,
+  "On_Collision_Computing": On_Collision_Computing,
   "Shader_Object_CreateVao": Shader_Object_CreateVao,
   "Shader_Object_Init": Shader_Object_Init,
   "Shader_Object_Render": Shader_Object_Render,
@@ -6135,6 +6137,9 @@ var _GS_Show_One_Text_Font = Module["_GS_Show_One_Text_Font"] = createExportWrap
 var _GS_Attribute_Exists = Module["_GS_Attribute_Exists"] = createExportWrapper("GS_Attribute_Exists");
 
 /** @type {function(...*):?} */
+var _GS_Make_Context_Current = Module["_GS_Make_Context_Current"] = createExportWrapper("GS_Make_Context_Current");
+
+/** @type {function(...*):?} */
 var _GS_Show_Asyn_Buffer_Geometry_Count = Module["_GS_Show_Asyn_Buffer_Geometry_Count"] = createExportWrapper("GS_Show_Asyn_Buffer_Geometry_Count");
 
 /** @type {function(...*):?} */
@@ -6199,6 +6204,9 @@ var _GS_Asyn_Unbuffer_Geometry_By_Key = Module["_GS_Asyn_Unbuffer_Geometry_By_Ke
 
 /** @type {function(...*):?} */
 var _GS_Asyn_Render_View_By_Key = Module["_GS_Asyn_Render_View_By_Key"] = createExportWrapper("GS_Asyn_Render_View_By_Key");
+
+/** @type {function(...*):?} */
+var _GS_Asyn_Need_Update_View_By_Key = Module["_GS_Asyn_Need_Update_View_By_Key"] = createExportWrapper("GS_Asyn_Need_Update_View_By_Key");
 
 /** @type {function(...*):?} */
 var _GS_Save_Segment = Module["_GS_Save_Segment"] = createExportWrapper("GS_Save_Segment");
@@ -6792,10 +6800,16 @@ var _GS_Compute_Boundingbox_By_Key = Module["_GS_Compute_Boundingbox_By_Key"] = 
 var _GS_Compute_View_Boundingbox_By_Key = Module["_GS_Compute_View_Boundingbox_By_Key"] = createExportWrapper("GS_Compute_View_Boundingbox_By_Key");
 
 /** @type {function(...*):?} */
+var _GS_Compute_View_Boundingbox_By_Keys = Module["_GS_Compute_View_Boundingbox_By_Keys"] = createExportWrapper("GS_Compute_View_Boundingbox_By_Keys");
+
+/** @type {function(...*):?} */
 var _GS_Compute_Geometry_Boundingbox_By_Key = Module["_GS_Compute_Geometry_Boundingbox_By_Key"] = createExportWrapper("GS_Compute_Geometry_Boundingbox_By_Key");
 
 /** @type {function(...*):?} */
 var _GS_Compute_Segment_Boundingbox_By_Key = Module["_GS_Compute_Segment_Boundingbox_By_Key"] = createExportWrapper("GS_Compute_Segment_Boundingbox_By_Key");
+
+/** @type {function(...*):?} */
+var _GS_Clear_Segment_Boundingbox_By_Key = Module["_GS_Clear_Segment_Boundingbox_By_Key"] = createExportWrapper("GS_Clear_Segment_Boundingbox_By_Key");
 
 /** @type {function(...*):?} */
 var _GS_Show_BoundingBox_By_Key = Module["_GS_Show_BoundingBox_By_Key"] = createExportWrapper("GS_Show_BoundingBox_By_Key");
@@ -6807,13 +6821,7 @@ var _GS_Compute_Selection_By_Key = Module["_GS_Compute_Selection_By_Key"] = crea
 var _GS_Compute_Selection_By_Area = Module["_GS_Compute_Selection_By_Area"] = createExportWrapper("GS_Compute_Selection_By_Area");
 
 /** @type {function(...*):?} */
-var _GS_Compute_Collision_By_Key = Module["_GS_Compute_Collision_By_Key"] = createExportWrapper("GS_Compute_Collision_By_Key");
-
-/** @type {function(...*):?} */
 var _GS_Compute_Collision_By_Keys = Module["_GS_Compute_Collision_By_Keys"] = createExportWrapper("GS_Compute_Collision_By_Keys");
-
-/** @type {function(...*):?} */
-var _GS_Show_Collision_Status = Module["_GS_Show_Collision_Status"] = createExportWrapper("GS_Show_Collision_Status");
 
 /** @type {function(...*):?} */
 var _GS_Show_Selection_Count = Module["_GS_Show_Selection_Count"] = createExportWrapper("GS_Show_Selection_Count");
@@ -6877,6 +6885,9 @@ var _GS_Asyn_Update_Geometry_Data_By_Key_Tt = Module["_GS_Asyn_Update_Geometry_D
 
 /** @type {function(...*):?} */
 var _GS_Asyn_Update_Partial_Geometry_Data_By_Key_Tt = Module["_GS_Asyn_Update_Partial_Geometry_Data_By_Key_Tt"] = createExportWrapper("GS_Asyn_Update_Partial_Geometry_Data_By_Key_Tt");
+
+/** @type {function(...*):?} */
+var _GS_Compute_Collision_By_Keys_Tt = Module["_GS_Compute_Collision_By_Keys_Tt"] = createExportWrapper("GS_Compute_Collision_By_Keys_Tt");
 
 /** @type {function(...*):?} */
 var _GS_Boolean_Intersection_Graph = Module["_GS_Boolean_Intersection_Graph"] = createExportWrapper("GS_Boolean_Intersection_Graph");
@@ -7015,9 +7026,6 @@ var ___errno_location = Module["___errno_location"] = createExportWrapper("__err
 
 /** @type {function(...*):?} */
 var _fflush = Module["_fflush"] = createExportWrapper("fflush");
-
-/** @type {function(...*):?} */
-var _emscripten_main_thread_process_queued_calls = Module["_emscripten_main_thread_process_queued_calls"] = createExportWrapper("emscripten_main_thread_process_queued_calls");
 
 /** @type {function(...*):?} */
 var _setThrew = Module["_setThrew"] = createExportWrapper("setThrew");

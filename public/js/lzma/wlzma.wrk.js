@@ -35,10 +35,10 @@ var LZMA = LZMA;
 if (!LZMA) importScripts('lzma.js');
 if (!LZMA.oStream) importScripts('lzma.shim.js');
 
-onmessage = function(e) {
+onmessage = function (e) {
   // get buffer from data
   var wid = e.data[0],
-      buffer = e.data[1];
+    buffer = e.data[1];
   // create the input stream instance
   var inStream = new LZMA.iStream(buffer);
   // create the output stream instance

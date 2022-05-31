@@ -2,7 +2,7 @@
   <div id="app">
     <div id="viewerWrapper">
       <viewerWrapper elementId="viewer" />
-      <viewerWrapper elementId="viewer2" />
+      <!-- <viewerWrapper elementId="viewer2" /> -->
     </div>
   </div>
 </template>
@@ -31,28 +31,36 @@ export default {
   mounted() {
     let options = {
       elementId: "viewer",
-      modelService: "http://8.134.85.254:9032/api",
+      modelService: "http://8.134.85.254:9034/api",
       fileService: "http://8.134.85.254:9040/api",
+      components: {
+        property: {
+          tabs: [
+            {
+              name: "11111",
+              component: () => import("./components/HelloWorld.vue"),
+            },
+          ],
+        },
+      },
     };
-    let options2 = {
-      elementId: "viewer2",
-      modelService: "http://8.134.85.254:9032/api",
-      fileService: "http://8.134.85.254:9040/api",
-    };
+    // let options2 = {
+    //   elementId: "viewer2",
+    //   modelService: "http://8.134.85.254:9032/api",
+    //   fileService: "http://8.134.85.254:9040/api",
+    // };
 
-    BimAir.Loader({ url: "https://static.graphicstone.com/bimAir" }).then(
-      () => {
-        let viewer = new BimAir.Viewer(options);
-        let viewer2 = new BimAir.Viewer(options2);
+    BimAir.Loader({ isShareArrayBuffer: true }).then(() => {
+      let viewer = new BimAir.Viewer(options);
+      // let viewer2 = new BimAir.Viewer(options2);
 
-        viewer.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {
-          viewer.fitWorld();
-        });
-        viewer2.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {
-          viewer2.fitWorld();
-        });
-      }
-    );
+      viewer.loadModels(["62835c6437640c49f53c9776"], true).then(() => {
+        viewer.fitWorld();
+      });
+      // viewer2.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {
+      //   viewer2.fitWorld();
+      // });
+    });
   },
 };
 </script>

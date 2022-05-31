@@ -1458,29 +1458,35 @@ var tempDouble;
 var tempI64;
 
 var ASM_CONSTS = {
- 60490: function($0) {
+ 63488: function($0) {
   Module["firstGLContextExt"] = GL.contexts[$0].GLctx.getExtension("WEBGL_lose_context");
  },
- 60582: function() {
+ 63580: function() {
   Module["firstGLContextExt"].loseContext();
  }
 };
 
-function After_Asyn_Update_Geometry_Data(view_key) {
+function After_Asyn_Update_Geometry_Data(view_key, cancelled) {
  if (Module.afterAsynUpdateGeometryData) {
-  Module.afterAsynUpdateGeometryData(view_key);
+  Module.afterAsynUpdateGeometryData(view_key, cancelled);
  }
 }
 
-function After_Asyn_Update_Partial_Geometry_Data(view_key, partial_key) {
+function After_Asyn_Update_Partial_Geometry_Data(view_key, partial_key, cancelled) {
  if (Module.afterAsynUpdatePartialGeometryData) {
-  Module.afterAsynUpdatePartialGeometryData(view_key, partial_key);
+  Module.afterAsynUpdatePartialGeometryData(view_key, partial_key, cancelled);
  }
 }
 
-function After_Asyn_Update_View(view_key) {
+function After_Asyn_Update_View(view_key, cancelled) {
  if (Module.afterAsynUpdateView) {
-  Module.afterAsynUpdateView(view_key);
+  Module.afterAsynUpdateView(view_key, cancelled);
+ }
+}
+
+function After_Collision_Computing(view_key, count) {
+ if (Module.onCollisionComputed) {
+  Module.onCollisionComputed(view_key, count);
  }
 }
 
@@ -1490,21 +1496,18 @@ function Image_External_Load(view_key, image_key, buffer) {
  }
 }
 
-function JS_Collision_Computation_Status(msg) {
- let str_msg = UTF8ToString(msg);
- if (Process) {
-  Process.statusChanged.forEach(value => {
-   value(str_msg);
-  });
- }
-}
-
 function JS_Create_Texture(buffer) {
  _glGenTextures(1, buffer);
  if (window.GROWABLE_HEAP_I32) {
   return GL.textures[GROWABLE_HEAP_I32()[buffer >> 2]];
  } else {
   return GL.textures[GROWABLE_HEAP_I32()[buffer >> 2]];
+ }
+}
+
+function On_Collision_Computing(view_key, total, current) {
+ if (Module.onCollisionComputing) {
+  Module.onCollisionComputing(view_key, total, current);
  }
 }
 
@@ -4702,6 +4705,11 @@ function _emscripten_asm_const_int(code, sigPtr, argbuf) {
 
 function _emscripten_conditional_set_current_thread_status(expectedStatus, newStatus) {}
 
+function _emscripten_console_log(str) {
+ assert(typeof str === "number");
+ console.log(UTF8ToString(str));
+}
+
 function runtimeKeepalivePush() {
  runtimeKeepaliveCounter += 1;
 }
@@ -4709,10 +4717,6 @@ function runtimeKeepalivePush() {
 function _emscripten_exit_with_live_runtime() {
  runtimeKeepalivePush();
  throw "unwind";
-}
-
-function _emscripten_has_threading_support() {
- return typeof SharedArrayBuffer !== "undefined";
 }
 
 function _emscripten_memcpy_big(dest, src, num) {
@@ -5042,6 +5046,10 @@ function _emscripten_set_timeout(cb, msecs, userData) {
    getWasmTableEntry(cb)(userData);
   });
  }, msecs);
+}
+
+function _emscripten_unwind_to_js_event_loop() {
+ throw "unwind";
 }
 
 function __webgl_enable_ANGLE_instanced_arrays(ctx) {
@@ -6220,9 +6228,10 @@ var asmLibraryArg = {
  "After_Asyn_Update_Geometry_Data": After_Asyn_Update_Geometry_Data,
  "After_Asyn_Update_Partial_Geometry_Data": After_Asyn_Update_Partial_Geometry_Data,
  "After_Asyn_Update_View": After_Asyn_Update_View,
+ "After_Collision_Computing": After_Collision_Computing,
  "Image_External_Load": Image_External_Load,
- "JS_Collision_Computation_Status": JS_Collision_Computation_Status,
  "JS_Create_Texture": JS_Create_Texture,
+ "On_Collision_Computing": On_Collision_Computing,
  "Shader_Object_CreateVao": Shader_Object_CreateVao,
  "Shader_Object_Init": Shader_Object_Init,
  "Shader_Object_Render": Shader_Object_Render,
@@ -6241,9 +6250,9 @@ var asmLibraryArg = {
  "abort": _abort,
  "emscripten_asm_const_int": _emscripten_asm_const_int,
  "emscripten_conditional_set_current_thread_status": _emscripten_conditional_set_current_thread_status,
+ "emscripten_console_log": _emscripten_console_log,
  "emscripten_exit_with_live_runtime": _emscripten_exit_with_live_runtime,
  "emscripten_get_now": _emscripten_get_now,
- "emscripten_has_threading_support": _emscripten_has_threading_support,
  "emscripten_memcpy_big": _emscripten_memcpy_big,
  "emscripten_receive_on_main_thread_js": _emscripten_receive_on_main_thread_js,
  "emscripten_resize_heap": _emscripten_resize_heap,
@@ -6251,6 +6260,7 @@ var asmLibraryArg = {
  "emscripten_set_canvas_element_size": _emscripten_set_canvas_element_size,
  "emscripten_set_current_thread_status": _emscripten_set_current_thread_status,
  "emscripten_set_timeout": _emscripten_set_timeout,
+ "emscripten_unwind_to_js_event_loop": _emscripten_unwind_to_js_event_loop,
  "emscripten_webgl_create_context": _emscripten_webgl_create_context,
  "emscripten_webgl_destroy_context": _emscripten_webgl_destroy_context,
  "emscripten_webgl_get_current_context": _emscripten_webgl_get_current_context,
@@ -6486,6 +6496,8 @@ var _GS_Show_One_Text_Font = Module["_GS_Show_One_Text_Font"] = createExportWrap
 
 var _GS_Attribute_Exists = Module["_GS_Attribute_Exists"] = createExportWrapper("GS_Attribute_Exists");
 
+var _GS_Make_Context_Current = Module["_GS_Make_Context_Current"] = createExportWrapper("GS_Make_Context_Current");
+
 var _GS_Show_Asyn_Buffer_Geometry_Count = Module["_GS_Show_Asyn_Buffer_Geometry_Count"] = createExportWrapper("GS_Show_Asyn_Buffer_Geometry_Count");
 
 var _GS_Show_Asyn_Buffer_Geometry_Keys = Module["_GS_Show_Asyn_Buffer_Geometry_Keys"] = createExportWrapper("GS_Show_Asyn_Buffer_Geometry_Keys");
@@ -6529,6 +6541,8 @@ var _GS_Asyn_Buffer_Geometry_By_Key = Module["_GS_Asyn_Buffer_Geometry_By_Key"] 
 var _GS_Asyn_Unbuffer_Geometry_By_Key = Module["_GS_Asyn_Unbuffer_Geometry_By_Key"] = createExportWrapper("GS_Asyn_Unbuffer_Geometry_By_Key");
 
 var _GS_Asyn_Render_View_By_Key = Module["_GS_Asyn_Render_View_By_Key"] = createExportWrapper("GS_Asyn_Render_View_By_Key");
+
+var _GS_Asyn_Need_Update_View_By_Key = Module["_GS_Asyn_Need_Update_View_By_Key"] = createExportWrapper("GS_Asyn_Need_Update_View_By_Key");
 
 var _GS_Save_Segment = Module["_GS_Save_Segment"] = createExportWrapper("GS_Save_Segment");
 
@@ -6924,9 +6938,13 @@ var _GS_Compute_Boundingbox_By_Key = Module["_GS_Compute_Boundingbox_By_Key"] = 
 
 var _GS_Compute_View_Boundingbox_By_Key = Module["_GS_Compute_View_Boundingbox_By_Key"] = createExportWrapper("GS_Compute_View_Boundingbox_By_Key");
 
+var _GS_Compute_View_Boundingbox_By_Keys = Module["_GS_Compute_View_Boundingbox_By_Keys"] = createExportWrapper("GS_Compute_View_Boundingbox_By_Keys");
+
 var _GS_Compute_Geometry_Boundingbox_By_Key = Module["_GS_Compute_Geometry_Boundingbox_By_Key"] = createExportWrapper("GS_Compute_Geometry_Boundingbox_By_Key");
 
 var _GS_Compute_Segment_Boundingbox_By_Key = Module["_GS_Compute_Segment_Boundingbox_By_Key"] = createExportWrapper("GS_Compute_Segment_Boundingbox_By_Key");
+
+var _GS_Clear_Segment_Boundingbox_By_Key = Module["_GS_Clear_Segment_Boundingbox_By_Key"] = createExportWrapper("GS_Clear_Segment_Boundingbox_By_Key");
 
 var _GS_Show_BoundingBox_By_Key = Module["_GS_Show_BoundingBox_By_Key"] = createExportWrapper("GS_Show_BoundingBox_By_Key");
 
@@ -6934,11 +6952,7 @@ var _GS_Compute_Selection_By_Key = Module["_GS_Compute_Selection_By_Key"] = crea
 
 var _GS_Compute_Selection_By_Area = Module["_GS_Compute_Selection_By_Area"] = createExportWrapper("GS_Compute_Selection_By_Area");
 
-var _GS_Compute_Collision_By_Key = Module["_GS_Compute_Collision_By_Key"] = createExportWrapper("GS_Compute_Collision_By_Key");
-
 var _GS_Compute_Collision_By_Keys = Module["_GS_Compute_Collision_By_Keys"] = createExportWrapper("GS_Compute_Collision_By_Keys");
-
-var _GS_Show_Collision_Status = Module["_GS_Show_Collision_Status"] = createExportWrapper("GS_Show_Collision_Status");
 
 var _GS_Show_Selection_Count = Module["_GS_Show_Selection_Count"] = createExportWrapper("GS_Show_Selection_Count");
 
@@ -6981,6 +6995,8 @@ var _GS_Asyn_Update_View_By_Key_Tt = Module["_GS_Asyn_Update_View_By_Key_Tt"] = 
 var _GS_Asyn_Update_Geometry_Data_By_Key_Tt = Module["_GS_Asyn_Update_Geometry_Data_By_Key_Tt"] = createExportWrapper("GS_Asyn_Update_Geometry_Data_By_Key_Tt");
 
 var _GS_Asyn_Update_Partial_Geometry_Data_By_Key_Tt = Module["_GS_Asyn_Update_Partial_Geometry_Data_By_Key_Tt"] = createExportWrapper("GS_Asyn_Update_Partial_Geometry_Data_By_Key_Tt");
+
+var _GS_Compute_Collision_By_Keys_Tt = Module["_GS_Compute_Collision_By_Keys_Tt"] = createExportWrapper("GS_Compute_Collision_By_Keys_Tt");
 
 var _GS_Boolean_Intersection_Graph = Module["_GS_Boolean_Intersection_Graph"] = createExportWrapper("GS_Boolean_Intersection_Graph");
 
@@ -7132,9 +7148,9 @@ var _memalign = Module["_memalign"] = createExportWrapper("memalign");
 
 var dynCall_jiji = Module["dynCall_jiji"] = createExportWrapper("dynCall_jiji");
 
-var __emscripten_main_thread_futex = Module["__emscripten_main_thread_futex"] = 60712;
+var __emscripten_main_thread_futex = Module["__emscripten_main_thread_futex"] = 63704;
 
-var __emscripten_allow_main_runtime_queued_calls = Module["__emscripten_allow_main_runtime_queued_calls"] = 58260;
+var __emscripten_allow_main_runtime_queued_calls = Module["__emscripten_allow_main_runtime_queued_calls"] = 61060;
 
 function invoke_vii(index, a1, a2) {
  var sp = stackSave();
