@@ -19,14 +19,7 @@ Vue.use(BimAir.ViewerWrapper);
 export default {
   name: "App",
   components: {},
-  methods: {
-    // loadScript(path) {
-    //   const s = document.createElement("script");
-    //   s.type = "text/javascript";
-    //   s.src = path;
-    //   document.body.appendChild(s);
-    // },
-  },
+  methods: {},
 
   mounted() {
     let options = {
