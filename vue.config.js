@@ -19,5 +19,17 @@ module.exports = {
             // "Cross-Origin-Opener-Policy": "cross-origin",
             //  "Cross-Origin-Embedder-Policy": "require-corp",
         },
+        proxy: {
+            "/model-service": {
+                target: "http://8.134.85.254:9034/api/model-service",
+                // target: "http://8.134.85.254:9036/api/model-service", //renderObject测试服务
+
+                changeOrigin: true,
+                ws: true,
+                pathRewrite: {
+                    "^/model-service": "/",
+                },
+                timeout: 300000
+            },
+        }
     }
-}
