@@ -46,13 +46,36 @@ export default {
     BimAir.Loader({ isShareArrayBuffer: true }).then(() => {
       let viewer = new BimAir.Viewer(options);
       // let viewer2 = new BimAir.Viewer(options2);
-
-      viewer.loadModels(["62835c6437640c49f53c9776"], true).then(() => {
+      let id = "62835c6437640c49f53c9776";
+      // let id = "629895e8c44f1f288793a7b6";
+      viewer.loadModels([id], true).then(() => {
         viewer.fitWorld();
       });
+      viewer.modelDebug = true;
       // viewer2.loadModels(["6253e9d6b0545a0a6e49bf85"], true).then(() => {
       //   viewer2.fitWorld();
       // });
+
+      // let defaultFont =
+      //   "getComputedSylte" in window
+      //     ? getComputedStyle(document.documentElement)["font-family"]
+      //     : document.documentElement.currentStyle["font-family"];
+
+      // // let f = new FontFace("Avenir");
+      // console.log("ffffffffffff", defaultFont);
+
+      // let fontkit = require("fontkit");
+
+      // // open a font synchronously
+      // let font = fontkit.openSync("./font/精简版微软雅黑TTF.ttf");
+
+      // // layout a string, using default shaping features.
+      // // returns a GlyphRun, describing glyphs and positions.
+      // let run = font.layout("hello world!");
+
+      // // get an SVG path for a glyph
+      // let svg = run.glyphs[0].path;
+      // console.log("svg-----------", svg);
     });
   },
 };
