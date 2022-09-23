@@ -306,4 +306,7 @@ export default {
   bottom: 0; */
   display: flex;
 }
+body {
+  margin: 0;
+}
 </style>
