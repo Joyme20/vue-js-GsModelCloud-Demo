@@ -13,18 +13,17 @@
 var Module = {};
 
 // Node.js support
-if (typeof process === 'object' && typeof process.versions === 'object' && typeof process.versions.node === 'string') {
+var ENVIRONMENT_IS_NODE = typeof process == 'object' && typeof process.versions == 'object' && typeof process.versions.node == 'string';
+if (ENVIRONMENT_IS_NODE) {
   // Create as web-worker-like an environment as we can.
 
   var nodeWorkerThreads = require('worker_threads');
 
   var parentPort = nodeWorkerThreads.parentPort;
 
-  parentPort.on('message', function(data) {
-    onmessage({ data: data });
-  });
+  parentPort.on('message', (data) => onmessage({ data: data }));
 
-  var nodeFS = require('fs');
+  var fs = require('fs');
 
   Object.assign(global, {
     self: global,
@@ -35,7 +34,7 @@ if (typeof process === 'object' && typeof process.versions === 'object' && typeo
     },
     Worker: nodeWorkerThreads.Worker,
     importScripts: function(f) {
-      (0, eval)(nodeFS.readFileSync(f, 'utf8'));
+      (0, eval)(fs.readFileSync(f, 'utf8'));
     },
     postMessage: function(msg) {
       parentPort.postMessage(msg);
@@ -48,7 +47,12 @@ if (typeof process === 'object' && typeof process.versions === 'object' && typeo
   });
 }
 
-// Thread-local:
+// Thread-local guard variable for one-time init of the JS state
+var initializedJS = false;
+
+// Proxying queues that were notified before the thread started and need to be
+// executed as part of startup.
+var pendingNotifiedProxyingQueues = [];
 
 function assert(condition, text) {
   if (!condition) abort('Assertion failed: ' + text);
@@ -56,6 +60,11 @@ function assert(condition, text) {
 
 function threadPrintErr() {
   var text = Array.prototype.slice.call(arguments).join(' ');
+  // See https://github.com/emscripten-core/emscripten/issues/14804
+  if (ENVIRONMENT_IS_NODE) {
+    fs.writeSync(2, text + '\n');
+    return;
+  }
   console.error(text);
 }
 function threadAlert() {
@@ -65,13 +74,11 @@ function threadAlert() {
 // We don't need out() for now, but may need to add it if we want to use it
 // here. Or, if this code all moves into the main JS, that problem will go
 // away. (For now, adding it here increases code size for no benefit.)
-var out = function() {
-  throw 'out() is not defined in worker.js.';
-}
+var out = () => { throw 'out() is not defined in worker.js.'; }
 var err = threadPrintErr;
 self.alert = threadAlert;
 
-Module['instantiateWasm'] = function(info, receiveInstance) {
+Module['instantiateWasm'] = (info, receiveInstance) => {
   // Instantiate from the module posted from the main thread.
   // We can just use sync instantiation in the worker.
   var instance = new WebAssembly.Instance(Module['wasmModule'], info);
@@ -82,9 +89,15 @@ Module['instantiateWasm'] = function(info, receiveInstance) {
   // We don't need the module anymore; new threads will be spawned from the main thread.
   Module['wasmModule'] = null;
   return instance.exports;
+}
+
+// Turn unhandled rejected promises into errors so that the main thread will be
+// notified about them.
+self.onunhandledrejection = (e) => {
+  throw e.reason ?? e;
 };
 
-self.onmessage = function(e) {
+self.onmessage = (e) => {
   try {
     if (e.data.cmd === 'load') { // Preload command that is called once per worker to parse and load the Emscripten code.
 
@@ -97,7 +110,7 @@ self.onmessage = function(e) {
 
       Module['ENVIRONMENT_IS_PTHREAD'] = true;
 
-      if (typeof e.data.urlOrBlob === 'string') {
+      if (typeof e.data.urlOrBlob == 'string') {
         importScripts(e.data.urlOrBlob);
       } else {
         var objectUrl = URL.createObjectURL(e.data.urlOrBlob);
@@ -117,31 +130,30 @@ self.onmessage = function(e) {
       // (+/- 0.1msecs in testing).
       Module['__performance_now_clock_drift'] = performance.now() - e.data.time;
 
-      // Pass the thread address inside the asm.js scope to store it for fast access that avoids the need for a FFI out.
-      Module['__emscripten_thread_init'](e.data.threadInfoStruct, /*isMainBrowserThread=*/0, /*isMainRuntimeThread=*/0, /*canBlock=*/1);
+      // Pass the thread address to wasm to store it for fast access.
+      Module['__emscripten_thread_init'](e.data.pthread_ptr, /*isMainBrowserThread=*/0, /*isMainRuntimeThread=*/0, /*canBlock=*/1);
 
-      assert(e.data.threadInfoStruct);
+      assert(e.data.pthread_ptr);
       // Also call inside JS module to set up the stack frame for this pthread in JS module scope
       Module['establishStackSpace']();
       Module['PThread'].receiveObjectTransfer(e.data);
-      Module['PThread'].threadInit();
+      Module['PThread'].threadInitTLS();
+
+      if (!initializedJS) {
+
+        // Execute any proxied work that came in before the thread was
+        // initialized. Only do this once because it is only possible for
+        // proxying notifications to arrive before thread initialization on
+        // fresh workers.
+        pendingNotifiedProxyingQueues.forEach(queue => {
+          Module['executeNotifiedProxyingQueue'](queue);
+        });
+        pendingNotifiedProxyingQueues = [];
+        initializedJS = true;
+      }
 
       try {
-        // pthread entry points are always of signature 'void *ThreadMain(void *arg)'
-        // Native codebases sometimes spawn threads with other thread entry point signatures,
-        // such as void ThreadMain(void *arg), void *ThreadMain(), or void ThreadMain().
-        // That is not acceptable per C/C++ specification, but x86 compiler ABI extensions
-        // enable that to work. If you find the following line to crash, either change the signature
-        // to "proper" void *ThreadMain(void *arg) form, or try linking with the Emscripten linker
-        // flag -s EMULATE_FUNCTION_POINTER_CASTS=1 to add in emulation for this x86 ABI extension.
-        var result = Module['invokeEntryPoint'](e.data.start_routine, e.data.arg);
-
-        Module['checkStackCookie']();
-        if (Module['keepRuntimeAlive']()) {
-          Module['PThread'].setExitStatus(result);
-        } else {
-          Module['__emscripten_thread_exit'](result);
-        }
+        Module['invokeEntryPoint'](e.data.start_routine, e.data.arg);
       } catch(ex) {
         if (ex != 'unwind') {
           // ExitStatus not present in MINIMAL_RUNTIME
@@ -167,13 +179,16 @@ self.onmessage = function(e) {
       }
     } else if (e.data.cmd === 'cancel') { // Main thread is asking for a pthread_cancel() on this thread.
       if (Module['_pthread_self']()) {
-        Module['__emscripten_thread_exit'](-1/*PTHREAD_CANCELED*/);
+        Module['__emscripten_thread_exit'](-1);
       }
     } else if (e.data.target === 'setimmediate') {
       // no-op
-    } else if (e.data.cmd === 'processThreadQueue') {
-      if (Module['_pthread_self']()) { // If this thread is actually running?
-        Module['_emscripten_current_thread_process_queued_calls']();
+    } else if (e.data.cmd === 'processProxyingQueue') {
+      if (initializedJS) {
+        Module['executeNotifiedProxyingQueue'](e.data.queue);
+      } else {
+        // Defer executing this queue until the runtime is initialized.
+        pendingNotifiedProxyingQueues.push(e.data.queue);
       }
     } else {
       err('worker.js received unknown command ' + e.data.cmd);
@@ -182,6 +197,9 @@ self.onmessage = function(e) {
   } catch(ex) {
     err('worker.js onmessage() captured an uncaught exception: ' + ex);
     if (ex && ex.stack) err(ex.stack);
+    if (Module['__emscripten_thread_crashed']) {
+      Module['__emscripten_thread_crashed']();
+    }
     throw ex;
   }
 };
