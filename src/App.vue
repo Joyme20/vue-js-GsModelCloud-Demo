@@ -192,10 +192,16 @@ export default {
       // key: "681fe1e77ec44cd88af1620c1b2bffc2",
       // secret: "NjgxZmUxZTc3ZWM0NGNkODhhZjE2MjBjMWIyYmZmYzI=",
       // userService: "https://8.134.85.254:9021/api",
-      isShareArrayBuffer: false,
+      isShareArrayBuffer: true,
     }).then(() => {
       let viewer = new BimAir.Viewer(options);
-      viewer.camera.projection = BimAir.Longan.ProjectionType.Orthographic; //正交投影
+      // viewer.isUpdateTt = true;
+      // viewer.isCache = true;
+      // viewer.modelDebug = true;
+
+      viewer.instanceObjectSegment.renderingOptions.LogarithmicDepthBuffer = true;
+
+      // viewer.camera.projection = BimAir.Longan.ProjectionType.Orthographic; //正交投影
       viewer.highlightManager.material.setColor(255, 0, 0);
 
       // let viewer2 = new BimAir.Viewer(options2);
@@ -208,8 +214,8 @@ export default {
           { id: "63105024b15c844749910c62", version: 1 },
         ])
         .then(() => {
-          viewer.modelDebug = true;
-          viewer.fitWorld();
+          // viewer.modelDebug = true;
+          // viewer.fitWorld();
           // viewer.camera.position = [-16.356, 45.186, 110.299];
           // viewer.camera.target = [-13.438, 6.806, 2.679];
           // viewer.camera.up = [0.071, -0.939, 0.337];
@@ -219,7 +225,11 @@ export default {
           //   // viewer.updateDisplay();
           // }, 300);
           viewer.updateDisplay();
-          console.log("SharedArrayBuffer", SharedArrayBuffer);
+
+          viewer.panelManager.viewPointPanel.addViewPoint("aaa").then((res) => {
+            let id = res.viewPoint.id;
+          });
+          // console.log("SharedArrayBuffer", SharedArrayBuffer);
 
           // let data = [];
           // for (let i = 0; i < 100; i++) {

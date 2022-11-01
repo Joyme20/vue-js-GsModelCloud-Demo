@@ -12,7 +12,7 @@
   "dependencies": {
     "axios": "^0.21.4",
     "core-js": "^3.6.5",
-    "gs-bim-air": "^0.0.30.12",
+    "gs-bim-air": "^0.0.3-0.31",
     "vue": "^2.7.3"
   },
   "devDependencies": {

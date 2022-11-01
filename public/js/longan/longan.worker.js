@@ -54,10 +54,6 @@ var initializedJS = false;
 // executed as part of startup.
 var pendingNotifiedProxyingQueues = [];
 
-function assert(condition, text) {
-  if (!condition) abort('Assertion failed: ' + text);
-}
-
 function threadPrintErr() {
   var text = Array.prototype.slice.call(arguments).join(' ');
   // See https://github.com/emscripten-core/emscripten/issues/14804
@@ -71,10 +67,6 @@ function threadAlert() {
   var text = Array.prototype.slice.call(arguments).join(' ');
   postMessage({cmd: 'alert', text: text, threadId: Module['_pthread_self']()});
 }
-// We don't need out() for now, but may need to add it if we want to use it
-// here. Or, if this code all moves into the main JS, that problem will go
-// away. (For now, adding it here increases code size for no benefit.)
-var out = () => { throw 'out() is not defined in worker.js.'; }
 var err = threadPrintErr;
 self.alert = threadAlert;
 
@@ -133,7 +125,6 @@ self.onmessage = (e) => {
       // Pass the thread address to wasm to store it for fast access.
       Module['__emscripten_thread_init'](e.data.pthread_ptr, /*isMainBrowserThread=*/0, /*isMainRuntimeThread=*/0, /*canBlock=*/1);
 
-      assert(e.data.pthread_ptr);
       // Also call inside JS module to set up the stack frame for this pthread in JS module scope
       Module['establishStackSpace']();
       Module['PThread'].receiveObjectTransfer(e.data);
@@ -159,9 +150,7 @@ self.onmessage = (e) => {
           // ExitStatus not present in MINIMAL_RUNTIME
           if (ex instanceof Module['ExitStatus']) {
             if (Module['keepRuntimeAlive']()) {
-              err('Pthread 0x' + Module['_pthread_self']().toString(16) + ' called exit(), staying alive due to noExitRuntime.');
             } else {
-              err('Pthread 0x' + Module['_pthread_self']().toString(16) + ' called exit(), calling _emscripten_thread_exit.');
               Module['__emscripten_thread_exit'](ex.status);
             }
           }
@@ -172,9 +161,6 @@ self.onmessage = (e) => {
             // and let the top level handler propagate it back to the main thread.
             throw ex;
           }
-        } else {
-          // else e == 'unwind', and we should fall through here and keep the pthread alive for asynchronous events.
-          err('Pthread 0x' + Module['_pthread_self']().toString(16) + ' completed its main entry point with an `unwind`, keeping the worker alive for asynchronous operation.');
         }
       }
     } else if (e.data.cmd === 'cancel') { // Main thread is asking for a pthread_cancel() on this thread.
@@ -190,13 +176,14 @@ self.onmessage = (e) => {
         // Defer executing this queue until the runtime is initialized.
         pendingNotifiedProxyingQueues.push(e.data.queue);
       }
-    } else {
+    } else if (e.data.cmd) {
+      // The received message looks like something that should be handled by this message
+      // handler, (since there is a e.data.cmd field present), but is not one of the
+      // recognized commands:
       err('worker.js received unknown command ' + e.data.cmd);
       err(e.data);
     }
   } catch(ex) {
-    err('worker.js onmessage() captured an uncaught exception: ' + ex);
-    if (ex && ex.stack) err(ex.stack);
     if (Module['__emscripten_thread_crashed']) {
       Module['__emscripten_thread_crashed']();
     }

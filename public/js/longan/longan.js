@@ -1,54 +1,57 @@
-
-
-// Support for growable heap + pthreads, where the buffer may change, so JS views
-// must be updated.
 function GROWABLE_HEAP_I8() {
-  if (wasmMemory.buffer != buffer) {
-    updateGlobalBufferAndViews(wasmMemory.buffer);
-  }
-  return HEAP8;
+ if (wasmMemory.buffer != buffer) {
+  updateGlobalBufferAndViews(wasmMemory.buffer);
+ }
+ return HEAP8;
 }
+
 function GROWABLE_HEAP_U8() {
-  if (wasmMemory.buffer != buffer) {
-    updateGlobalBufferAndViews(wasmMemory.buffer);
-  }
-  return HEAPU8;
+ if (wasmMemory.buffer != buffer) {
+  updateGlobalBufferAndViews(wasmMemory.buffer);
+ }
+ return HEAPU8;
 }
+
 function GROWABLE_HEAP_I16() {
-  if (wasmMemory.buffer != buffer) {
-    updateGlobalBufferAndViews(wasmMemory.buffer);
-  }
-  return HEAP16;
+ if (wasmMemory.buffer != buffer) {
+  updateGlobalBufferAndViews(wasmMemory.buffer);
+ }
+ return HEAP16;
 }
+
 function GROWABLE_HEAP_U16() {
-  if (wasmMemory.buffer != buffer) {
-    updateGlobalBufferAndViews(wasmMemory.buffer);
-  }
-  return HEAPU16;
+ if (wasmMemory.buffer != buffer) {
+  updateGlobalBufferAndViews(wasmMemory.buffer);
+ }
+ return HEAPU16;
 }
+
 function GROWABLE_HEAP_I32() {
-  if (wasmMemory.buffer != buffer) {
-    updateGlobalBufferAndViews(wasmMemory.buffer);
-  }
-  return HEAP32;
+ if (wasmMemory.buffer != buffer) {
+  updateGlobalBufferAndViews(wasmMemory.buffer);
+ }
+ return HEAP32;
 }
+
 function GROWABLE_HEAP_U32() {
-  if (wasmMemory.buffer != buffer) {
-    updateGlobalBufferAndViews(wasmMemory.buffer);
-  }
-  return HEAPU32;
+ if (wasmMemory.buffer != buffer) {
+  updateGlobalBufferAndViews(wasmMemory.buffer);
+ }
+ return HEAPU32;
 }
+
 function GROWABLE_HEAP_F32() {
-  if (wasmMemory.buffer != buffer) {
-    updateGlobalBufferAndViews(wasmMemory.buffer);
-  }
-  return HEAPF32;
+ if (wasmMemory.buffer != buffer) {
+  updateGlobalBufferAndViews(wasmMemory.buffer);
+ }
+ return HEAPF32;
 }
+
 function GROWABLE_HEAP_F64() {
-  if (wasmMemory.buffer != buffer) {
-    updateGlobalBufferAndViews(wasmMemory.buffer);
-  }
-  return HEAPF64;
+ if (wasmMemory.buffer != buffer) {
+  updateGlobalBufferAndViews(wasmMemory.buffer);
+ }
+ return HEAPF64;
 }
 
 var Module = typeof Module != "undefined" ? Module : {};
@@ -68,12 +71,6 @@ var ENVIRONMENT_IS_WEB = typeof window == "object";
 var ENVIRONMENT_IS_WORKER = typeof importScripts == "function";
 
 var ENVIRONMENT_IS_NODE = typeof process == "object" && typeof process.versions == "object" && typeof process.versions.node == "string";
-
-var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
-
-if (Module["ENVIRONMENT"]) {
- throw new Error("Module.ENVIRONMENT has been deprecated. To force the environment, use the ENVIRONMENT compile-time option (for example, -sENVIRONMENT=web or -sENVIRONMENT=node)");
-}
 
 var ENVIRONMENT_IS_PTHREAD = Module["ENVIRONMENT_IS_PTHREAD"] || false;
 
@@ -99,33 +96,21 @@ var read_, readAsync, readBinary, setWindowTitle;
 function logExceptionOnExit(e) {
  if (e instanceof ExitStatus) return;
  let toLog = e;
- if (e && typeof e == "object" && e.stack) {
-  toLog = [ e, e.stack ];
- }
  err("exiting due to exception: " + toLog);
 }
 
-var fs;
-
-var nodePath;
-
-var requireNodeFS;
-
 if (ENVIRONMENT_IS_NODE) {
- if (typeof process == "undefined" || !process.release || process.release.name !== "node") throw new Error("not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)");
  if (ENVIRONMENT_IS_WORKER) {
   scriptDirectory = require("path").dirname(scriptDirectory) + "/";
  } else {
   scriptDirectory = __dirname + "/";
  }
- requireNodeFS = () => {
-  if (!nodePath) {
-   fs = require("fs");
-   nodePath = require("path");
-  }
- };
- read_ = function shell_read(filename, binary) {
-  requireNodeFS();
+ var fs, nodePath;
+ if (typeof require === "function") {
+  fs = require("fs");
+  nodePath = require("path");
+ }
+ read_ = (filename, binary) => {
   filename = nodePath["normalize"](filename);
   return fs.readFileSync(filename, binary ? undefined : "utf8");
  };
@@ -134,11 +119,9 @@ if (ENVIRONMENT_IS_NODE) {
   if (!ret.buffer) {
    ret = new Uint8Array(ret);
   }
-  assert(ret.buffer);
   return ret;
  };
  readAsync = (filename, onload, onerror) => {
-  requireNodeFS();
   filename = nodePath["normalize"](filename);
   fs.readFile(filename, function(err, data) {
    if (err) onerror(err); else onload(data.buffer);
@@ -178,41 +161,6 @@ if (ENVIRONMENT_IS_NODE) {
   throw e;
  }
  global.Worker = nodeWorkerThreads.Worker;
-} else if (ENVIRONMENT_IS_SHELL) {
- if (typeof process == "object" && typeof require === "function" || typeof window == "object" || typeof importScripts == "function") throw new Error("not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)");
- if (typeof read != "undefined") {
-  read_ = function shell_read(f) {
-   return read(f);
-  };
- }
- readBinary = function readBinary(f) {
-  let data;
-  if (typeof readbuffer == "function") {
-   return new Uint8Array(readbuffer(f));
-  }
-  data = read(f, "binary");
-  assert(typeof data == "object");
-  return data;
- };
- readAsync = function readAsync(f, onload, onerror) {
-  setTimeout(() => onload(readBinary(f)), 0);
- };
- if (typeof scriptArgs != "undefined") {
-  arguments_ = scriptArgs;
- } else if (typeof arguments != "undefined") {
-  arguments_ = arguments;
- }
- if (typeof quit == "function") {
-  quit_ = (status, toThrow) => {
-   logExceptionOnExit(toThrow);
-   quit(status);
-  };
- }
- if (typeof print != "undefined") {
-  if (typeof console == "undefined") console = {};
-  console.log = print;
-  console.warn = console.error = typeof printErr != "undefined" ? printErr : print;
- }
 } else if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
  if (ENVIRONMENT_IS_WORKER) {
   scriptDirectory = self.location.href;
@@ -224,7 +172,6 @@ if (ENVIRONMENT_IS_NODE) {
  } else {
   scriptDirectory = "";
  }
- if (!(typeof window == "object" || typeof importScripts == "function")) throw new Error("not compiled for this environment (did you build to HTML and try to run it not on the web, or set ENVIRONMENT to something - like node - and run it someplace else - like on the web?)");
  if (!ENVIRONMENT_IS_NODE) {
   read_ = url => {
    var xhr = new XMLHttpRequest();
@@ -257,9 +204,7 @@ if (ENVIRONMENT_IS_NODE) {
   };
  }
  setWindowTitle = title => document.title = title;
-} else {
- throw new Error("environment detection error");
-}
+} else {}
 
 if (ENVIRONMENT_IS_NODE) {
  if (typeof performance == "undefined") {
@@ -272,7 +217,6 @@ var defaultPrint = console.log.bind(console);
 var defaultPrintErr = console.warn.bind(console);
 
 if (ENVIRONMENT_IS_NODE) {
- requireNodeFS();
  defaultPrint = str => fs.writeSync(1, str + "\n");
  defaultPrintErr = str => fs.writeSync(2, str + "\n");
 }
@@ -285,153 +229,11 @@ Object.assign(Module, moduleOverrides);
 
 moduleOverrides = null;
 
-checkIncomingModuleAPI();
-
 if (Module["arguments"]) arguments_ = Module["arguments"];
-
-legacyModuleProp("arguments", "arguments_");
 
 if (Module["thisProgram"]) thisProgram = Module["thisProgram"];
 
-legacyModuleProp("thisProgram", "thisProgram");
-
 if (Module["quit"]) quit_ = Module["quit"];
-
-legacyModuleProp("quit", "quit_");
-
-assert(typeof Module["memoryInitializerPrefixURL"] == "undefined", "Module.memoryInitializerPrefixURL option was removed, use Module.locateFile instead");
-
-assert(typeof Module["pthreadMainPrefixURL"] == "undefined", "Module.pthreadMainPrefixURL option was removed, use Module.locateFile instead");
-
-assert(typeof Module["cdInitializerPrefixURL"] == "undefined", "Module.cdInitializerPrefixURL option was removed, use Module.locateFile instead");
-
-assert(typeof Module["filePackagePrefixURL"] == "undefined", "Module.filePackagePrefixURL option was removed, use Module.locateFile instead");
-
-assert(typeof Module["read"] == "undefined", "Module.read option was removed (modify read_ in JS)");
-
-assert(typeof Module["readAsync"] == "undefined", "Module.readAsync option was removed (modify readAsync in JS)");
-
-assert(typeof Module["readBinary"] == "undefined", "Module.readBinary option was removed (modify readBinary in JS)");
-
-assert(typeof Module["setWindowTitle"] == "undefined", "Module.setWindowTitle option was removed (modify setWindowTitle in JS)");
-
-assert(typeof Module["TOTAL_MEMORY"] == "undefined", "Module.TOTAL_MEMORY has been renamed Module.INITIAL_MEMORY");
-
-legacyModuleProp("read", "read_");
-
-legacyModuleProp("readAsync", "readAsync");
-
-legacyModuleProp("readBinary", "readBinary");
-
-legacyModuleProp("setWindowTitle", "setWindowTitle");
-
-var IDBFS = "IDBFS is no longer included by default; build with -lidbfs.js";
-
-var PROXYFS = "PROXYFS is no longer included by default; build with -lproxyfs.js";
-
-var WORKERFS = "WORKERFS is no longer included by default; build with -lworkerfs.js";
-
-var NODEFS = "NODEFS is no longer included by default; build with -lnodefs.js";
-
-assert(ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER || ENVIRONMENT_IS_NODE, "Pthreads do not work in this environment yet (need Web Workers, or an alternative to them)");
-
-assert(!ENVIRONMENT_IS_SHELL, "shell environment detected but not enabled at build time.  Add 'shell' to `-sENVIRONMENT` to enable.");
-
-var STACK_ALIGN = 16;
-
-var POINTER_SIZE = 4;
-
-function getNativeTypeSize(type) {
- switch (type) {
- case "i1":
- case "i8":
- case "u8":
-  return 1;
-
- case "i16":
- case "u16":
-  return 2;
-
- case "i32":
- case "u32":
-  return 4;
-
- case "i64":
- case "u64":
-  return 8;
-
- case "float":
-  return 4;
-
- case "double":
-  return 8;
-
- default:
-  {
-   if (type[type.length - 1] === "*") {
-    return POINTER_SIZE;
-   }
-   if (type[0] === "i") {
-    const bits = Number(type.substr(1));
-    assert(bits % 8 === 0, "getNativeTypeSize invalid bits " + bits + ", type " + type);
-    return bits / 8;
-   }
-   return 0;
-  }
- }
-}
-
-function legacyModuleProp(prop, newName) {
- if (!Object.getOwnPropertyDescriptor(Module, prop)) {
-  Object.defineProperty(Module, prop, {
-   configurable: true,
-   get: function() {
-    abort("Module." + prop + " has been replaced with plain " + newName + " (the initial value can be provided on Module, but after startup the value is only looked for on a local variable of that name)");
-   }
-  });
- }
-}
-
-function ignoredModuleProp(prop) {
- if (Object.getOwnPropertyDescriptor(Module, prop)) {
-  abort("`Module." + prop + "` was supplied but `" + prop + "` not included in INCOMING_MODULE_JS_API");
- }
-}
-
-function isExportedByForceFilesystem(name) {
- return name === "FS_createPath" || name === "FS_createDataFile" || name === "FS_createPreloadedFile" || name === "FS_unlink" || name === "addRunDependency" || name === "FS_createLazyFile" || name === "FS_createDevice" || name === "removeRunDependency";
-}
-
-function missingLibrarySymbol(sym) {
- if (typeof globalThis !== "undefined" && !Object.getOwnPropertyDescriptor(globalThis, sym)) {
-  Object.defineProperty(globalThis, sym, {
-   configurable: true,
-   get: function() {
-    var msg = "`" + sym + "` is a library symbol and not included by default; add it to your library.js __deps or to DEFAULT_LIBRARY_FUNCS_TO_INCLUDE on the command line";
-    if (isExportedByForceFilesystem(sym)) {
-     msg += ". Alternatively, forcing filesystem support (-sFORCE_FILESYSTEM) can export this for you";
-    }
-    warnOnce(msg);
-    return undefined;
-   }
-  });
- }
-}
-
-function unexportedRuntimeSymbol(sym) {
- if (!Object.getOwnPropertyDescriptor(Module, sym)) {
-  Object.defineProperty(Module, sym, {
-   configurable: true,
-   get: function() {
-    var msg = "'" + sym + "' was not exported. add it to EXPORTED_RUNTIME_METHODS (see the FAQ)";
-    if (isExportedByForceFilesystem(sym)) {
-     msg += ". Alternatively, forcing filesystem support (-sFORCE_FILESYSTEM) can export this for you";
-    }
-    abort(msg);
-   }
-  });
- }
-}
 
 var Atomics_load = Atomics.load;
 
@@ -443,11 +245,7 @@ var wasmBinary;
 
 if (Module["wasmBinary"]) wasmBinary = Module["wasmBinary"];
 
-legacyModuleProp("wasmBinary", "wasmBinary");
-
 var noExitRuntime = Module["noExitRuntime"] || true;
-
-legacyModuleProp("noExitRuntime", "noExitRuntime");
 
 if (typeof WebAssembly != "object") {
  abort("no native wasm support detected");
@@ -463,7 +261,7 @@ var EXITSTATUS;
 
 function assert(condition, text) {
  if (!condition) {
-  abort("Assertion failed" + (text ? ": " + text : ""));
+  abort(text);
  }
 }
 
@@ -492,7 +290,6 @@ function UTF8ArrayToString(heapOrArray, idx, maxBytesToRead) {
   if ((u0 & 240) == 224) {
    u0 = (u0 & 15) << 12 | u1 << 6 | u2;
   } else {
-   if ((u0 & 248) != 240) warnOnce("Invalid UTF-8 leading byte 0x" + u0.toString(16) + " encountered when deserializing a UTF-8 string in wasm memory to a JS string!");
    u0 = (u0 & 7) << 18 | u1 << 12 | u2 << 6 | heapOrArray[idx++] & 63;
   }
   if (u0 < 65536) {
@@ -533,7 +330,6 @@ function stringToUTF8Array(str, heap, outIdx, maxBytesToWrite) {
    heap[outIdx++] = 128 | u & 63;
   } else {
    if (outIdx + 3 >= endIdx) break;
-   if (u > 1114111) warnOnce("Invalid Unicode code point 0x" + u.toString(16) + " encountered when serializing a JS string to a UTF-8 string in wasm memory! (Valid unicode code points should be in range 0-0x10FFFF).");
    heap[outIdx++] = 240 | u >> 18;
    heap[outIdx++] = 128 | u >> 12 & 63;
    heap[outIdx++] = 128 | u >> 6 & 63;
@@ -545,7 +341,6 @@ function stringToUTF8Array(str, heap, outIdx, maxBytesToWrite) {
 }
 
 function stringToUTF8(str, outPtr, maxBytesToWrite) {
- assert(typeof maxBytesToWrite == "number", "stringToUTF8(str, outPtr, maxBytesToWrite) is missing the third parameter that specifies the length of the output buffer!");
  return stringToUTF8Array(str, GROWABLE_HEAP_U8(), outPtr, maxBytesToWrite);
 }
 
@@ -567,7 +362,7 @@ function lengthBytesUTF8(str) {
  return len;
 }
 
-var HEAP, buffer, HEAP8, HEAPU8, HEAP16, HEAPU16, HEAP32, HEAPU32, HEAPF32, HEAPF64;
+var buffer, HEAP8, HEAPU8, HEAP16, HEAPU16, HEAP32, HEAPU32, HEAPF32, HEAPF64;
 
 if (ENVIRONMENT_IS_PTHREAD) {
  buffer = Module["buffer"];
@@ -585,17 +380,7 @@ function updateGlobalBufferAndViews(buf) {
  Module["HEAPF64"] = HEAPF64 = new Float64Array(buf);
 }
 
-var TOTAL_STACK = 5242880;
-
-if (Module["TOTAL_STACK"]) assert(TOTAL_STACK === Module["TOTAL_STACK"], "the stack size can no longer be determined at runtime");
-
 var INITIAL_MEMORY = Module["INITIAL_MEMORY"] || 1073741824;
-
-legacyModuleProp("INITIAL_MEMORY", "INITIAL_MEMORY");
-
-assert(INITIAL_MEMORY >= TOTAL_STACK, "INITIAL_MEMORY should be larger than TOTAL_STACK, was " + INITIAL_MEMORY + "! (TOTAL_STACK=" + TOTAL_STACK + ")");
-
-assert(typeof Int32Array != "undefined" && typeof Float64Array !== "undefined" && Int32Array.prototype.subarray != undefined && Int32Array.prototype.set != undefined, "JS engine does not provide full typed array support");
 
 if (ENVIRONMENT_IS_PTHREAD) {
  wasmMemory = Module["wasmMemory"];
@@ -625,37 +410,9 @@ if (wasmMemory) {
 
 INITIAL_MEMORY = buffer.byteLength;
 
-assert(INITIAL_MEMORY % 65536 === 0);
-
 updateGlobalBufferAndViews(buffer);
 
 var wasmTable;
-
-function writeStackCookie() {
- var max = _emscripten_stack_get_end();
- assert((max & 3) == 0);
- GROWABLE_HEAP_U32()[max >> 2] = 34821223;
- GROWABLE_HEAP_U32()[max + 4 >> 2] = 2310721022;
- GROWABLE_HEAP_U32()[0] = 1668509029;
-}
-
-function checkStackCookie() {
- if (ABORT) return;
- var max = _emscripten_stack_get_end();
- var cookie1 = GROWABLE_HEAP_U32()[max >> 2];
- var cookie2 = GROWABLE_HEAP_U32()[max + 4 >> 2];
- if (cookie1 != 34821223 || cookie2 != 2310721022) {
-  abort("Stack overflow! Stack cookie has been overwritten at 0x" + max.toString(16) + ", expected hex dwords 0x89BACDFE and 0x2135467, but received 0x" + cookie2.toString(16) + " 0x" + cookie1.toString(16));
- }
- if (GROWABLE_HEAP_U32()[0] !== 1668509029) abort("Runtime error: The application has corrupted its heap memory area (address zero)!");
-}
-
-(function() {
- var h16 = new Int16Array(1);
- var h8 = new Int8Array(h16.buffer);
- h16[0] = 25459;
- if (h8[0] !== 115 || h8[1] !== 99) throw "Runtime error: expected the system to be little-endian! (Run with -sSUPPORT_BIG_ENDIAN to bypass)";
-})();
 
 var __ATPRERUN__ = [];
 
@@ -672,7 +429,6 @@ function keepRuntimeAlive() {
 }
 
 function preRun() {
- assert(!ENVIRONMENT_IS_PTHREAD);
  if (Module["preRun"]) {
   if (typeof Module["preRun"] == "function") Module["preRun"] = [ Module["preRun"] ];
   while (Module["preRun"].length) {
@@ -683,10 +439,8 @@ function preRun() {
 }
 
 function initRuntime() {
- assert(!runtimeInitialized);
  runtimeInitialized = true;
  if (ENVIRONMENT_IS_PTHREAD) return;
- checkStackCookie();
  if (!Module["noFSInit"] && !FS.init.initialized) FS.init();
  FS.ignorePermissions = false;
  TTY.init();
@@ -694,7 +448,6 @@ function initRuntime() {
 }
 
 function postRun() {
- checkStackCookie();
  if (ENVIRONMENT_IS_PTHREAD) return;
  if (Module["postRun"]) {
   if (typeof Module["postRun"] == "function") Module["postRun"] = [ Module["postRun"] ];
@@ -713,19 +466,9 @@ function addOnInit(cb) {
  __ATINIT__.unshift(cb);
 }
 
-function addOnExit(cb) {}
-
 function addOnPostRun(cb) {
  __ATPOSTRUN__.unshift(cb);
 }
-
-assert(Math.imul, "This browser does not support Math.imul(), build with LEGACY_VM_SUPPORT or POLYFILL_OLD_MATH_FUNCTIONS to add in a polyfill");
-
-assert(Math.fround, "This browser does not support Math.fround(), build with LEGACY_VM_SUPPORT or POLYFILL_OLD_MATH_FUNCTIONS to add in a polyfill");
-
-assert(Math.clz32, "This browser does not support Math.clz32(), build with LEGACY_VM_SUPPORT or POLYFILL_OLD_MATH_FUNCTIONS to add in a polyfill");
-
-assert(Math.trunc, "This browser does not support Math.trunc(), build with LEGACY_VM_SUPPORT or POLYFILL_OLD_MATH_FUNCTIONS to add in a polyfill");
 
 var runDependencies = 0;
 
@@ -733,14 +476,8 @@ var runDependencyWatcher = null;
 
 var dependenciesFulfilled = null;
 
-var runDependencyTracking = {};
-
 function getUniqueRunDependency(id) {
- var orig = id;
- while (1) {
-  if (!runDependencyTracking[id]) return id;
-  id = orig + Math.random();
- }
+ return id;
 }
 
 function addRunDependency(id) {
@@ -748,44 +485,12 @@ function addRunDependency(id) {
  if (Module["monitorRunDependencies"]) {
   Module["monitorRunDependencies"](runDependencies);
  }
- if (id) {
-  assert(!runDependencyTracking[id]);
-  runDependencyTracking[id] = 1;
-  if (runDependencyWatcher === null && typeof setInterval != "undefined") {
-   runDependencyWatcher = setInterval(function() {
-    if (ABORT) {
-     clearInterval(runDependencyWatcher);
-     runDependencyWatcher = null;
-     return;
-    }
-    var shown = false;
-    for (var dep in runDependencyTracking) {
-     if (!shown) {
-      shown = true;
-      err("still waiting on run dependencies:");
-     }
-     err("dependency: " + dep);
-    }
-    if (shown) {
-     err("(end of list)");
-    }
-   }, 1e4);
-  }
- } else {
-  err("warning: run dependency added without ID");
- }
 }
 
 function removeRunDependency(id) {
  runDependencies--;
  if (Module["monitorRunDependencies"]) {
   Module["monitorRunDependencies"](runDependencies);
- }
- if (id) {
-  assert(runDependencyTracking[id]);
-  delete runDependencyTracking[id];
- } else {
-  err("warning: run dependency removed without ID");
  }
  if (runDependencies == 0) {
   if (runDependencyWatcher !== null) {
@@ -815,6 +520,7 @@ function abort(what) {
  err(what);
  ABORT = true;
  EXITSTATUS = 1;
+ what += ". Build with -sASSERTIONS for more info.";
  var e = new WebAssembly.RuntimeError(what);
  throw e;
 }
@@ -827,21 +533,6 @@ function isDataURI(filename) {
 
 function isFileURI(filename) {
  return filename.startsWith("file://");
-}
-
-function createExportWrapper(name, fixedasm) {
- return function() {
-  var displayName = name;
-  var asm = fixedasm;
-  if (!fixedasm) {
-   asm = Module["asm"];
-  }
-  assert(runtimeInitialized, "native function `" + displayName + "` called before runtime initialization");
-  if (!asm[name]) {
-   assert(asm[name], "exported native function `" + displayName + "` not found");
-  }
-  return asm[name].apply(null, arguments);
- };
 }
 
 var wasmBinaryFile;
@@ -896,16 +587,14 @@ function getBinaryPromise() {
 
 function createWasm() {
  var info = {
-  "env": asmLibraryArg,
-  "wasi_snapshot_preview1": asmLibraryArg
+  "a": asmLibraryArg
  };
  function receiveInstance(instance, module) {
   var exports = instance.exports;
   Module["asm"] = exports;
-  registerTLSInit(Module["asm"]["_emscripten_tls_init"]);
-  wasmTable = Module["asm"]["__indirect_function_table"];
-  assert(wasmTable, "table not found in wasm exports");
-  addOnInit(Module["asm"]["__wasm_call_ctors"]);
+  registerTLSInit(Module["asm"]["tj"]);
+  wasmTable = Module["asm"]["db"];
+  addOnInit(Module["asm"]["cb"]);
   wasmModule = module;
   if (!ENVIRONMENT_IS_PTHREAD) {
    var numWorkersToLoad = PThread.unusedWorkers.length;
@@ -919,10 +608,7 @@ function createWasm() {
  if (!ENVIRONMENT_IS_PTHREAD) {
   addRunDependency("wasm-instantiate");
  }
- var trueModule = Module;
  function receiveInstantiationResult(result) {
-  assert(Module === trueModule, "the Module object should not be replaced during async compilation - perhaps the order of HTML elements is wrong?");
-  trueModule = null;
   receiveInstance(result["instance"], result["module"]);
  }
  function instantiateArrayBuffer(receiver) {
@@ -932,9 +618,6 @@ function createWasm() {
    return instance;
   }).then(receiver, function(reason) {
    err("failed to asynchronously prepare wasm: " + reason);
-   if (isFileURI(wasmBinaryFile)) {
-    err("warning: Loading from a file URI (" + wasmBinaryFile + ") is not supported in most browsers. See https://emscripten.org/docs/getting_started/FAQ.html#how-do-i-run-a-local-webserver-for-testing-why-does-my-program-stall-in-downloading-or-preparing");
-   }
    abort(reason);
   });
  }
@@ -972,17 +655,13 @@ var tempDouble;
 var tempI64;
 
 var ASM_CONSTS = {
- 175605: $0 => {
+ 176728: $0 => {
   Module["firstGLContextExt"] = GL.contexts[$0].GLctx.getExtension("WEBGL_lose_context");
  },
- 175697: () => {
+ 176820: () => {
   Module["firstGLContextExt"].loseContext();
  }
 };
-
-function get_memory_size() {
- return GROWABLE_HEAP_I8().length;
-}
 
 function Shader_Object_Init(no, program) {
  Module.shaderObjects[no].initGL(program);
@@ -1024,6 +703,30 @@ function After_Stream_To_Segment(key, no) {
  }
 }
 
+function After_Stream_To_Geometry_Data() {
+ if (Module.onStreamToGeometryDataFinished) {
+  Module.onStreamToGeometryDataFinished();
+ }
+}
+
+function After_Asyn_Update_View(view_key, cancelled) {
+ if (Module.afterAsynUpdateView) {
+  Module.afterAsynUpdateView(view_key, cancelled);
+ }
+}
+
+function After_Asyn_Update_Geometry_Data(view_key, partial_key, cancelled) {
+ if (Module.afterAsynUpdateGeometryData) {
+  Module.afterAsynUpdateGeometryData(view_key, partial_key, cancelled);
+ }
+}
+
+function After_Buffer_Geometry(no) {
+ if (Module.onBufferGeometryFinished) {
+  Module.onBufferGeometryFinished(no);
+ }
+}
+
 function On_Collision_Computing(view_key, total, current) {
  if (Module.onCollisionComputing) {
   Module.onCollisionComputing(view_key, total, current);
@@ -1054,30 +757,6 @@ function After_Compute_Collision(no, count, col_keys, col_paths, col_poss, col_t
  }
 }
 
-function After_Asyn_Update_View(view_key, cancelled) {
- if (Module.afterAsynUpdateView) {
-  Module.afterAsynUpdateView(view_key, cancelled);
- }
-}
-
-function After_Asyn_Update_Geometry_Data(view_key, cancelled) {
- if (Module.afterAsynUpdateGeometryData) {
-  Module.afterAsynUpdateGeometryData(view_key, cancelled);
- }
-}
-
-function After_Asyn_Update_Partial_Geometry_Data(view_key, partial_key, cancelled) {
- if (Module.afterAsynUpdatePartialGeometryData) {
-  Module.afterAsynUpdatePartialGeometryData(view_key, partial_key, cancelled);
- }
-}
-
-function After_Collision_Computing(view_key, count) {
- if (Module.onCollisionComputed) {
-  Module.onCollisionComputed(view_key, count);
- }
-}
-
 function ExitStatus(status) {
  this.name = "ExitStatus";
  this.message = "Program terminated with exit(" + status + ")";
@@ -1085,8 +764,6 @@ function ExitStatus(status) {
 }
 
 function killThread(pthread_ptr) {
- assert(!ENVIRONMENT_IS_PTHREAD, "Internal Error! killThread() can only ever be called from main application thread!");
- assert(pthread_ptr, "Internal Error! Null pthread_ptr in killThread!");
  var worker = PThread.pthreads[pthread_ptr];
  delete PThread.pthreads[pthread_ptr];
  worker.terminate();
@@ -1096,8 +773,6 @@ function killThread(pthread_ptr) {
 }
 
 function cancelThread(pthread_ptr) {
- assert(!ENVIRONMENT_IS_PTHREAD, "Internal Error! cancelThread() can only ever be called from main application thread!");
- assert(pthread_ptr, "Internal Error! Null pthread_ptr in cancelThread!");
  var worker = PThread.pthreads[pthread_ptr];
  worker.postMessage({
   "cmd": "cancel"
@@ -1105,26 +780,16 @@ function cancelThread(pthread_ptr) {
 }
 
 function cleanupThread(pthread_ptr) {
- assert(!ENVIRONMENT_IS_PTHREAD, "Internal Error! cleanupThread() can only ever be called from main application thread!");
- assert(pthread_ptr, "Internal Error! Null pthread_ptr in cleanupThread!");
  var worker = PThread.pthreads[pthread_ptr];
  assert(worker);
  PThread.returnWorkerToPool(worker);
 }
 
-function zeroMemory(address, size) {
- GROWABLE_HEAP_U8().fill(0, address, address + size);
- return address;
-}
-
 function spawnThread(threadParams) {
- assert(!ENVIRONMENT_IS_PTHREAD, "Internal Error! spawnThread() can only ever be called from main application thread!");
- assert(threadParams.pthread_ptr, "Internal error, no pthread ptr!");
  var worker = PThread.getNewWorker();
  if (!worker) {
   return 6;
  }
- assert(!worker.pthread_ptr, "Internal error!");
  PThread.runningWorkers.push(worker);
  PThread.pthreads[threadParams.pthread_ptr] = worker;
  worker.pthread_ptr = threadParams.pthread_ptr;
@@ -1223,7 +888,7 @@ function getRandomDevice() {
    return () => crypto_module["randomBytes"](1)[0];
   } catch (e) {}
  }
- return () => abort("no cryptographic support found for randomDevice. consider polyfilling it if you want to use something insecure like Math.random(), e.g. put this in a --pre-js: var crypto = { getRandomValues: function(array) { for (var i = 0; i < array.length; i++) array[i] = (Math.random()*256)|0 } };");
+ return () => abort("randomDevice");
 }
 
 var PATH_FS = {
@@ -1421,13 +1086,8 @@ var TTY = {
  }
 };
 
-function alignMemory(size, alignment) {
- assert(alignment, "alignment argument is required");
- return Math.ceil(size / alignment) * alignment;
-}
-
 function mmapAlloc(size) {
- abort("internal error: mmapAlloc called but `emscripten_builtin_memalign` native symbol not exported");
+ abort();
 }
 
 var MEMFS = {
@@ -1642,7 +1302,6 @@ var MEMFS = {
    var contents = stream.node.contents;
    if (position >= stream.node.usedBytes) return 0;
    var size = Math.min(stream.node.usedBytes - position, length);
-   assert(size >= 0);
    if (size > 8 && contents.subarray) {
     buffer.set(contents.subarray(position, position + size), offset);
    } else {
@@ -1651,7 +1310,6 @@ var MEMFS = {
    return size;
   },
   write: function(stream, buffer, offset, length, position, canOwn) {
-   assert(!(buffer instanceof ArrayBuffer));
    if (buffer.buffer === GROWABLE_HEAP_I8().buffer) {
     canOwn = false;
    }
@@ -1660,7 +1318,6 @@ var MEMFS = {
    node.timestamp = Date.now();
    if (buffer.subarray && (!node.contents || node.contents.subarray)) {
     if (canOwn) {
-     assert(position === 0, "canOwn must imply no weird position inside the file");
      node.contents = buffer.subarray(offset, offset + length);
      node.usedBytes = length;
      return length;
@@ -1733,13 +1390,7 @@ var MEMFS = {
    };
   },
   msync: function(stream, buffer, offset, length, mmapFlags) {
-   if (!FS.isFile(stream.node.mode)) {
-    throw new FS.ErrnoError(43);
-   }
-   if (mmapFlags & 2) {
-    return 0;
-   }
-   var bytesWritten = MEMFS.stream_ops.write(stream, buffer, 0, length, offset, false);
+   MEMFS.stream_ops.write(stream, buffer, 0, length, offset, false);
    return 0;
   }
  }
@@ -1760,130 +1411,6 @@ function asyncLoad(url, onload, onerror, noRunDep) {
  });
  if (dep) addRunDependency(dep);
 }
-
-var ERRNO_MESSAGES = {
- 0: "Success",
- 1: "Arg list too long",
- 2: "Permission denied",
- 3: "Address already in use",
- 4: "Address not available",
- 5: "Address family not supported by protocol family",
- 6: "No more processes",
- 7: "Socket already connected",
- 8: "Bad file number",
- 9: "Trying to read unreadable message",
- 10: "Mount device busy",
- 11: "Operation canceled",
- 12: "No children",
- 13: "Connection aborted",
- 14: "Connection refused",
- 15: "Connection reset by peer",
- 16: "File locking deadlock error",
- 17: "Destination address required",
- 18: "Math arg out of domain of func",
- 19: "Quota exceeded",
- 20: "File exists",
- 21: "Bad address",
- 22: "File too large",
- 23: "Host is unreachable",
- 24: "Identifier removed",
- 25: "Illegal byte sequence",
- 26: "Connection already in progress",
- 27: "Interrupted system call",
- 28: "Invalid argument",
- 29: "I/O error",
- 30: "Socket is already connected",
- 31: "Is a directory",
- 32: "Too many symbolic links",
- 33: "Too many open files",
- 34: "Too many links",
- 35: "Message too long",
- 36: "Multihop attempted",
- 37: "File or path name too long",
- 38: "Network interface is not configured",
- 39: "Connection reset by network",
- 40: "Network is unreachable",
- 41: "Too many open files in system",
- 42: "No buffer space available",
- 43: "No such device",
- 44: "No such file or directory",
- 45: "Exec format error",
- 46: "No record locks available",
- 47: "The link has been severed",
- 48: "Not enough core",
- 49: "No message of desired type",
- 50: "Protocol not available",
- 51: "No space left on device",
- 52: "Function not implemented",
- 53: "Socket is not connected",
- 54: "Not a directory",
- 55: "Directory not empty",
- 56: "State not recoverable",
- 57: "Socket operation on non-socket",
- 59: "Not a typewriter",
- 60: "No such device or address",
- 61: "Value too large for defined data type",
- 62: "Previous owner died",
- 63: "Not super-user",
- 64: "Broken pipe",
- 65: "Protocol error",
- 66: "Unknown protocol",
- 67: "Protocol wrong type for socket",
- 68: "Math result not representable",
- 69: "Read only file system",
- 70: "Illegal seek",
- 71: "No such process",
- 72: "Stale file handle",
- 73: "Connection timed out",
- 74: "Text file busy",
- 75: "Cross-device link",
- 100: "Device not a stream",
- 101: "Bad font file fmt",
- 102: "Invalid slot",
- 103: "Invalid request code",
- 104: "No anode",
- 105: "Block device required",
- 106: "Channel number out of range",
- 107: "Level 3 halted",
- 108: "Level 3 reset",
- 109: "Link number out of range",
- 110: "Protocol driver not attached",
- 111: "No CSI structure available",
- 112: "Level 2 halted",
- 113: "Invalid exchange",
- 114: "Invalid request descriptor",
- 115: "Exchange full",
- 116: "No data (for no delay io)",
- 117: "Timer expired",
- 118: "Out of streams resources",
- 119: "Machine is not on the network",
- 120: "Package not installed",
- 121: "The object is remote",
- 122: "Advertise error",
- 123: "Srmount error",
- 124: "Communication error on send",
- 125: "Cross mount point (not really error)",
- 126: "Given log. name not unique",
- 127: "f.d. invalid for this operation",
- 128: "Remote address changed",
- 129: "Can   access a needed shared lib",
- 130: "Accessing a corrupted shared lib",
- 131: ".lib section in a.out corrupted",
- 132: "Attempting to link in too many libs",
- 133: "Attempting to exec a shared library",
- 135: "Streams pipe error",
- 136: "Too many users",
- 137: "Socket type not supported",
- 138: "Not supported",
- 139: "Protocol family not supported",
- 140: "Can't send after socket shutdown",
- 141: "Too many references",
- 142: "Host is down",
- 148: "No medium (in tape drive)",
- 156: "Level 2 not synchronized"
-};
-
-var ERRNO_CODES = {};
 
 var FS = {
  root: null,
@@ -2002,7 +1529,6 @@ var FS = {
   return FS.lookup(parent, name);
  },
  createNode: (parent, name, mode, rdev) => {
-  assert(typeof parent == "object");
   var node = new FS.FSNode(parent, name, mode, rdev);
   FS.hashAddNode(node);
   return node;
@@ -2233,7 +1759,6 @@ var FS = {
   var mounts = FS.getMounts(FS.root.mount);
   var completed = 0;
   function doCallback(errCode) {
-   assert(FS.syncFSRequests > 0);
    FS.syncFSRequests--;
    return callback(errCode);
   }
@@ -2257,9 +1782,6 @@ var FS = {
   });
  },
  mount: (type, opts, mountpoint) => {
-  if (typeof type == "string") {
-   throw type;
-  }
   var root = mountpoint === "/";
   var pseudo = !mountpoint;
   var node;
@@ -2319,7 +1841,6 @@ var FS = {
   });
   node.mounted = null;
   var idx = node.mount.mounts.indexOf(mount);
-  assert(idx !== -1);
   node.mount.mounts.splice(idx, 1);
  },
  lookup: (parent, name) => {
@@ -2839,7 +2360,7 @@ var FS = {
   return stream.stream_ops.mmap(stream, length, position, prot, flags);
  },
  msync: (stream, buffer, offset, length, mmapFlags) => {
-  if (!stream || !stream.stream_ops.msync) {
+  if (!stream.stream_ops.msync) {
    return 0;
   }
   return stream.stream_ops.msync(stream, buffer, offset, length, mmapFlags);
@@ -2972,9 +2493,6 @@ var FS = {
   var stdin = FS.open("/dev/stdin", 0);
   var stdout = FS.open("/dev/stdout", 1);
   var stderr = FS.open("/dev/stderr", 1);
-  assert(stdin.fd === 0, "invalid handle for stdin (" + stdin.fd + ")");
-  assert(stdout.fd === 1, "invalid handle for stdout (" + stdout.fd + ")");
-  assert(stderr.fd === 2, "invalid handle for stderr (" + stderr.fd + ")");
  },
  ensureErrnoError: () => {
   if (FS.ErrnoError) return;
@@ -2982,22 +2500,9 @@ var FS = {
    this.node = node;
    this.setErrno = function(errno) {
     this.errno = errno;
-    for (var key in ERRNO_CODES) {
-     if (ERRNO_CODES[key] === errno) {
-      this.code = key;
-      break;
-     }
-    }
    };
    this.setErrno(errno);
-   this.message = ERRNO_MESSAGES[errno];
-   if (this.stack) {
-    Object.defineProperty(this, "stack", {
-     value: new Error().stack,
-     writable: true
-    });
-    this.stack = demangleAll(this.stack);
-   }
+   this.message = "FS error";
   };
   FS.ErrnoError.prototype = new Error();
   FS.ErrnoError.prototype.constructor = FS.ErrnoError;
@@ -3018,7 +2523,6 @@ var FS = {
   };
  },
  init: (input, output, error) => {
-  assert(!FS.init.initialized, "FS.init was previously called. If you want to initialize later with custom parameters, remove any earlier calls (note that one is automatically added to the generated code)");
   FS.init.initialized = true;
   FS.ensureErrnoError();
   Module["stdin"] = input || Module["stdin"];
@@ -3028,7 +2532,6 @@ var FS = {
  },
  quit: () => {
   FS.init.initialized = false;
-  _fflush(0);
   for (var i = 0; i < FS.streams.length; i++) {
    var stream = FS.streams[i];
    if (!stream) {
@@ -3319,7 +2822,6 @@ var FS = {
    var contents = stream.node.contents;
    if (position >= contents.length) return 0;
    var size = Math.min(contents.length - position, length);
-   assert(size >= 0);
    if (contents.slice) {
     for (var i = 0; i < size; i++) {
      buffer[offset + i] = contents[position + i];
@@ -3463,24 +2965,6 @@ var FS = {
    transaction.onerror = onerror;
   };
   openRequest.onerror = onerror;
- },
- absolutePath: () => {
-  abort("FS.absolutePath has been removed; use PATH_FS.resolve instead");
- },
- createFolder: () => {
-  abort("FS.createFolder has been removed; use FS.mkdir instead");
- },
- createLink: () => {
-  abort("FS.createLink has been removed; use FS.symlink instead");
- },
- joinPath: () => {
-  abort("FS.joinPath has been removed; use PATH.join instead");
- },
- mmapAlloc: () => {
-  abort("FS.mmapAlloc has been replaced by the top level function mmapAlloc");
- },
- standardizePath: () => {
-  abort("FS.standardizePath has been removed; use PATH.normalize instead");
  }
 };
 
@@ -3542,12 +3026,17 @@ var SYSCALLS = {
   return 0;
  },
  doMsync: function(addr, stream, len, flags, offset) {
+  if (!FS.isFile(stream.node.mode)) {
+   throw new FS.ErrnoError(43);
+  }
+  if (flags & 2) {
+   return 0;
+  }
   var buffer = GROWABLE_HEAP_U8().slice(addr, addr + len);
   FS.msync(stream, buffer, offset, len, flags);
  },
  varargs: undefined,
  get: function() {
-  assert(SYSCALLS.varargs != undefined);
   SYSCALLS.varargs += 4;
   var ret = GROWABLE_HEAP_I32()[SYSCALLS.varargs - 4 >> 2];
   return ret;
@@ -3576,25 +3065,16 @@ function _proc_exit(code) {
 
 function exitJS(status, implicit) {
  EXITSTATUS = status;
- checkUnflushedContent();
  if (!implicit) {
   if (ENVIRONMENT_IS_PTHREAD) {
    exitOnMainThread(status);
    throw "unwind";
   } else {}
  }
- if (keepRuntimeAlive() && !implicit) {
-  var msg = "program exited (with status: " + status + "), but EXIT_RUNTIME is not set, so halting execution but not exiting the runtime or preventing further async execution (build with EXIT_RUNTIME=1, if you want a true shutdown)";
-  err(msg);
- }
  _proc_exit(status);
 }
 
 var _exit = exitJS;
-
-function ptrToString(ptr) {
- return "0x" + ptr.toString(16).padStart(8, "0");
-}
 
 function handleException(e) {
  if (e instanceof ExitStatus || e == "unwind") {
@@ -3616,7 +3096,7 @@ var PThread = {
   }
  },
  initMainThread: function() {
-  var pthreadPoolSize = 9;
+  var pthreadPoolSize = 16;
   while (pthreadPoolSize--) {
    PThread.allocateUnusedWorker();
   }
@@ -3628,15 +3108,10 @@ var PThread = {
   EXITSTATUS = status;
  },
  terminateAllThreads: function() {
-  assert(!ENVIRONMENT_IS_PTHREAD, "Internal Error! terminateAllThreads() can only ever be called from main application thread!");
   for (var worker of Object.values(PThread.pthreads)) {
-   assert(worker);
    PThread.returnWorkerToPool(worker);
   }
-  assert(Object.keys(PThread.pthreads).length === 0);
-  assert(PThread.runningWorkers.length === 0);
   for (var worker of PThread.unusedWorkers) {
-   assert(!worker.pthread_ptr);
    worker.terminate();
   }
   PThread.unusedWorkers = [];
@@ -3704,9 +3179,6 @@ var PThread = {
   };
   worker.onerror = e => {
    var message = "worker sent an error!";
-   if (worker.pthread_ptr) {
-    message = "Pthread " + ptrToString(worker.pthread_ptr) + " sent an error!";
-   }
    err(message + " " + e.filename + ":" + e.lineno + ": " + e.message);
    throw e;
   };
@@ -3721,8 +3193,6 @@ var PThread = {
    });
    worker.on("detachedExit", function() {});
   }
-  assert(wasmMemory instanceof WebAssembly.Memory, "WebAssembly memory should have been loaded by now!");
-  assert(wasmModule instanceof WebAssembly.Module, "WebAssembly Module should have been loaded by now!");
   worker.postMessage({
    "cmd": "load",
    "urlOrBlob": Module["mainScriptUrlOrBlob"] || _scriptDir,
@@ -3736,7 +3206,6 @@ var PThread = {
  },
  getNewWorker: function() {
   if (PThread.unusedWorkers.length == 0) {
-   err("Tried to spawn a new thread, but the thread pool is exhausted.\n" + "This might result in a deadlock unless some threads eventually exit or the code explicitly breaks out to the event loop.\n" + "If you want to increase the pool size, use setting `-sPTHREAD_POOL_SIZE=...`." + "\nIf you want to throw an explicit error instead of the risk of deadlocking in those cases, use setting `-sPTHREAD_POOL_SIZE_STRICT=2`.");
    PThread.allocateUnusedWorker();
    PThread.loadWasmModuleToWorker(PThread.unusedWorkers[0]);
   }
@@ -3759,30 +3228,13 @@ function withStackSave(f) {
  return ret;
 }
 
-function demangle(func) {
- warnOnce("warning: build with -sDEMANGLE_SUPPORT to link in libcxxabi demangling");
- return func;
-}
-
-function demangleAll(text) {
- var regex = /\b_Z[\w\d_]+/g;
- return text.replace(regex, function(x) {
-  var y = demangle(x);
-  return x === y ? x : y + " [" + x + "]";
- });
-}
-
 function establishStackSpace() {
  var pthread_ptr = _pthread_self();
  var stackTop = GROWABLE_HEAP_I32()[pthread_ptr + 44 >> 2];
  var stackSize = GROWABLE_HEAP_I32()[pthread_ptr + 48 >> 2];
  var stackMax = stackTop - stackSize;
- assert(stackTop != 0);
- assert(stackMax != 0);
- assert(stackTop > stackMax, "stackTop must be higher then stackMax");
  _emscripten_stack_set_limits(stackTop, stackMax);
  stackRestore(stackTop);
- writeStackCookie();
 }
 
 Module["establishStackSpace"] = establishStackSpace;
@@ -3796,39 +3248,6 @@ function exitOnMainThread(returnCode) {
  }
 }
 
-function getValue(ptr, type = "i8") {
- if (type.endsWith("*")) type = "*";
- switch (type) {
- case "i1":
-  return GROWABLE_HEAP_I8()[ptr >> 0];
-
- case "i8":
-  return GROWABLE_HEAP_I8()[ptr >> 0];
-
- case "i16":
-  return GROWABLE_HEAP_I16()[ptr >> 1];
-
- case "i32":
-  return GROWABLE_HEAP_I32()[ptr >> 2];
-
- case "i64":
-  return GROWABLE_HEAP_I32()[ptr >> 2];
-
- case "float":
-  return GROWABLE_HEAP_F32()[ptr >> 2];
-
- case "double":
-  return GROWABLE_HEAP_F64()[ptr >> 3];
-
- case "*":
-  return GROWABLE_HEAP_U32()[ptr >> 2];
-
- default:
-  abort("invalid type for getValue: " + type);
- }
- return null;
-}
-
 var wasmTableMirror = [];
 
 function getWasmTableEntry(funcPtr) {
@@ -3837,13 +3256,11 @@ function getWasmTableEntry(funcPtr) {
   if (funcPtr >= wasmTableMirror.length) wasmTableMirror.length = funcPtr + 1;
   wasmTableMirror[funcPtr] = func = wasmTable.get(funcPtr);
  }
- assert(wasmTable.get(funcPtr) == func, "JavaScript-side Wasm function table mirror is out of date!");
  return func;
 }
 
 function invokeEntryPoint(ptr, arg) {
  var result = getWasmTableEntry(ptr)(arg);
- checkStackCookie();
  if (keepRuntimeAlive()) {
   PThread.setExitStatus(result);
  } else {
@@ -3853,88 +3270,8 @@ function invokeEntryPoint(ptr, arg) {
 
 Module["invokeEntryPoint"] = invokeEntryPoint;
 
-function jsStackTrace() {
- var error = new Error();
- if (!error.stack) {
-  try {
-   throw new Error();
-  } catch (e) {
-   error = e;
-  }
-  if (!error.stack) {
-   return "(no stack trace available)";
-  }
- }
- return error.stack.toString();
-}
-
 function registerTLSInit(tlsInitFunc) {
  PThread.tlsInitFunctions.push(tlsInitFunc);
-}
-
-function setValue(ptr, value, type = "i8") {
- if (type.endsWith("*")) type = "*";
- switch (type) {
- case "i1":
-  GROWABLE_HEAP_I8()[ptr >> 0] = value;
-  break;
-
- case "i8":
-  GROWABLE_HEAP_I8()[ptr >> 0] = value;
-  break;
-
- case "i16":
-  GROWABLE_HEAP_I16()[ptr >> 1] = value;
-  break;
-
- case "i32":
-  GROWABLE_HEAP_I32()[ptr >> 2] = value;
-  break;
-
- case "i64":
-  tempI64 = [ value >>> 0, (tempDouble = value, +Math.abs(tempDouble) >= 1 ? tempDouble > 0 ? (Math.min(+Math.floor(tempDouble / 4294967296), 4294967295) | 0) >>> 0 : ~~+Math.ceil((tempDouble - +(~~tempDouble >>> 0)) / 4294967296) >>> 0 : 0) ], 
-  GROWABLE_HEAP_I32()[ptr >> 2] = tempI64[0], GROWABLE_HEAP_I32()[ptr + 4 >> 2] = tempI64[1];
-  break;
-
- case "float":
-  GROWABLE_HEAP_F32()[ptr >> 2] = value;
-  break;
-
- case "double":
-  GROWABLE_HEAP_F64()[ptr >> 3] = value;
-  break;
-
- case "*":
-  GROWABLE_HEAP_U32()[ptr >> 2] = value;
-  break;
-
- default:
-  abort("invalid type for setValue: " + type);
- }
-}
-
-function stackTrace() {
- var js = jsStackTrace();
- if (Module["extraStackTrace"]) js += "\n" + Module["extraStackTrace"]();
- return demangleAll(js);
-}
-
-function warnOnce(text) {
- if (!warnOnce.shown) warnOnce.shown = {};
- if (!warnOnce.shown[text]) {
-  warnOnce.shown[text] = 1;
-  if (ENVIRONMENT_IS_NODE) text = "warning: " + text;
-  err(text);
- }
-}
-
-function writeArrayToMemory(array, buffer) {
- assert(array.length >= 0, "writeArrayToMemory array must have a length (should be an array or typed array)");
- GROWABLE_HEAP_I8().set(array, buffer);
-}
-
-function ___assert_fail(condition, filename, line, func) {
- abort("Assertion failed: " + UTF8ToString(condition) + ", at: " + [ filename ? UTF8ToString(filename) : "unknown filename", line, func ? UTF8ToString(func) : "unknown function" ]);
 }
 
 function ___emscripten_init_main_thread_js(tb) {
@@ -3977,21 +3314,6 @@ function ___pthread_create_js(pthread_ptr, attr, startRoutine, arg) {
   return 0;
  }
  return spawnThread(threadParams);
-}
-
-function ___pthread_kill_js(thread, signal) {
- if (signal === 33) {
-  if (!ENVIRONMENT_IS_PTHREAD) cancelThread(thread); else postMessage({
-   "cmd": "cancelThread",
-   "thread": thread
-  });
- } else {
-  if (!ENVIRONMENT_IS_PTHREAD) killThread(thread); else postMessage({
-   "cmd": "killThread",
-   "thread": thread
-  });
- }
- return 0;
 }
 
 function setErrNo(value) {
@@ -4140,18 +3462,8 @@ function ___syscall_openat(dirfd, path, flags, varargs) {
  }
 }
 
-function __emscripten_date_now() {
- return Date.now();
-}
-
 function __emscripten_default_pthread_stack_size() {
  return 2097152;
-}
-
-var nowIsMonotonic = true;
-
-function __emscripten_get_now_is_monotonic() {
- return nowIsMonotonic;
 }
 
 function executeNotifiedProxyingQueue(queue) {
@@ -4176,7 +3488,6 @@ function __emscripten_notify_task_queue(targetThreadId, currThreadId, mainThread
  } else {
   var worker = PThread.pthreads[targetThreadId];
   if (!worker) {
-   err("Cannot send message to thread with ID " + targetThreadId + ", unknown thread ID!");
    return;
   }
   worker.postMessage({
@@ -4188,7 +3499,6 @@ function __emscripten_notify_task_queue(targetThreadId, currThreadId, mainThread
 }
 
 function __emscripten_set_offscreencanvas_size(target, width, height) {
- err("emscripten_set_offscreencanvas_size: Build with -sOFFSCREENCANVAS_SUPPORT=1 to enable transferring canvases to pthreads.");
  return -1;
 }
 
@@ -4197,21 +3507,16 @@ function __emscripten_throw_longjmp() {
 }
 
 function _abort() {
- abort("native code called abort()");
+ abort("");
 }
 
 var readAsmConstArgsArray = [];
 
 function readAsmConstArgs(sigPtr, buf) {
- assert(Array.isArray(readAsmConstArgsArray));
- assert(buf % 16 == 0);
  readAsmConstArgsArray.length = 0;
  var ch;
  buf >>= 2;
  while (ch = GROWABLE_HEAP_U8()[sigPtr++]) {
-  var chr = String.fromCharCode(ch);
-  var validChars = [ "d", "f", "i" ];
-  assert(validChars.includes(chr), "Invalid character " + ch + '("' + chr + '") in readAsmConstArgs! Use only [' + validChars + '], and do not specify "v" for void return argument.');
   buf += ch != 105 & buf;
   readAsmConstArgsArray.push(ch == 105 ? GROWABLE_HEAP_I32()[buf] : GROWABLE_HEAP_F64()[buf++ >> 1]);
   ++buf;
@@ -4221,20 +3526,11 @@ function readAsmConstArgs(sigPtr, buf) {
 
 function _emscripten_asm_const_int(code, sigPtr, argbuf) {
  var args = readAsmConstArgs(sigPtr, argbuf);
- if (!ASM_CONSTS.hasOwnProperty(code)) abort("No EM_ASM constant found at address " + code);
  return ASM_CONSTS[code].apply(null, args);
 }
 
 function _emscripten_console_log(str) {
- assert(typeof str == "number");
  console.log(UTF8ToString(str));
-}
-
-function runtimeKeepalivePush() {}
-
-function _emscripten_exit_with_live_runtime() {
- runtimeKeepalivePush();
- throw "unwind";
 }
 
 var _emscripten_get_now;
@@ -4255,7 +3551,6 @@ function _emscripten_memcpy_big(dest, src, num) {
 function _emscripten_proxy_to_main_thread_js(index, sync) {
  var numCallArgs = arguments.length - 2;
  var outerArgs = arguments;
- if (numCallArgs > 20 - 1) throw "emscripten_proxy_to_main_thread_js: Too many arguments " + numCallArgs + " to proxied function idx=" + index + ", maximum supported is " + (20 - 1) + "!";
  return withStackSave(() => {
   var serializedNumCallArgs = numCallArgs;
   var args = stackAlloc(serializedNumCallArgs * 8);
@@ -4278,7 +3573,6 @@ function _emscripten_receive_on_main_thread_js(index, numCallArgs, args) {
  }
  var isEmAsmConst = index < 0;
  var func = !isEmAsmConst ? proxiedFunctionTable[index] : ASM_CONSTS[-index - 1];
- assert(func.length == numCallArgs, "Call args mismatch in emscripten_receive_on_main_thread_js");
  return func.apply(null, _emscripten_receive_on_main_thread_js_callArgs);
 }
 
@@ -4291,9 +3585,7 @@ function emscripten_realloc_buffer(size) {
   wasmMemory.grow(size - buffer.byteLength + 65535 >>> 16);
   updateGlobalBufferAndViews(wasmMemory.buffer);
   return 1;
- } catch (e) {
-  err("emscripten_realloc_buffer: Attempted to grow heap from " + buffer.byteLength + " bytes to " + size + " bytes, but got error: " + e);
- }
+ } catch (e) {}
 }
 
 function _emscripten_resize_heap(requestedSize) {
@@ -4304,7 +3596,6 @@ function _emscripten_resize_heap(requestedSize) {
  }
  var maxHeapSize = getHeapMax();
  if (requestedSize > maxHeapSize) {
-  err("Cannot enlarge memory, asked to go up to " + requestedSize + " bytes, but the limit is " + maxHeapSize + " bytes!");
   return false;
  }
  let alignUp = (x, multiple) => x + (multiple - x % multiple) % multiple;
@@ -4317,35 +3608,7 @@ function _emscripten_resize_heap(requestedSize) {
    return true;
   }
  }
- err("Failed to grow the heap from " + oldSize + " bytes to " + newSize + " bytes, not enough memory!");
  return false;
-}
-
-function maybeExit() {}
-
-function callUserCallback(func) {
- if (ABORT) {
-  err("user callback triggered after runtime exited or application aborted.  Ignoring.");
-  return;
- }
- try {
-  func();
-  if (ENVIRONMENT_IS_PTHREAD) maybeExit();
- } catch (e) {
-  handleException(e);
- }
-}
-
-function runtimeKeepalivePop() {}
-
-function _emscripten_set_timeout(cb, msecs, userData) {
- runtimeKeepalivePush();
- return setTimeout(function() {
-  runtimeKeepalivePop();
-  callUserCallback(function() {
-   getWasmTableEntry(cb)(userData);
-  });
- }, msecs);
 }
 
 function _emscripten_unwind_to_js_event_loop() {
@@ -4665,7 +3928,6 @@ function findCanvasEventTarget(target) {
 }
 
 function _emscripten_webgl_do_create_context(target, attributes) {
- assert(attributes);
  var a = attributes >> 2;
  var powerPreference = GROWABLE_HEAP_I32()[a + (24 >> 2)];
  var contextAttributes = {
@@ -4719,7 +3981,6 @@ function _emscripten_webgl_get_drawing_buffer_size(contextHandle, width, height)
 }
 
 function _emscripten_webgl_init_context_attributes(attributes) {
- assert(attributes);
  var a = attributes >> 2;
  for (var i = 0; i < 56 >> 2; ++i) {
   GROWABLE_HEAP_I32()[a + i] = 0;
@@ -4765,7 +4026,6 @@ function getEnvStrings() {
 
 function writeAsciiToMemory(str, buffer, dontAddNull) {
  for (var i = 0; i < str.length; ++i) {
-  assert(str.charCodeAt(i) === (str.charCodeAt(i) & 255));
   GROWABLE_HEAP_I8()[buffer++ >> 0] = str.charCodeAt(i);
  }
  if (!dontAddNull) GROWABLE_HEAP_I8()[buffer >> 0] = 0;
@@ -4835,8 +4095,6 @@ function _fd_read(fd, iov, iovcnt, pnum) {
 }
 
 function convertI32PairToI53Checked(lo, hi) {
- assert(lo == lo >>> 0 || lo == (lo | 0));
- assert(hi === (hi | 0));
  return hi + 2097152 >>> 0 < 4194305 - !!lo ? (lo >>> 0) + hi * 4294967296 : NaN;
 }
 
@@ -5475,363 +4733,11 @@ function _glViewport(x0, x1, x2, x3) {
  GLctx["viewport"](x0, x1, x2, x3);
 }
 
-function uleb128Encode(n, target) {
- assert(n < 16384);
- if (n < 128) {
-  target.push(n);
- } else {
-  target.push(n % 128 | 128, n >> 7);
- }
-}
-
-function sigToWasmTypes(sig) {
- var typeNames = {
-  "i": "i32",
-  "j": "i64",
-  "f": "f32",
-  "d": "f64",
-  "p": "i32"
- };
- var type = {
-  parameters: [],
-  results: sig[0] == "v" ? [] : [ typeNames[sig[0]] ]
- };
- for (var i = 1; i < sig.length; ++i) {
-  assert(sig[i] in typeNames, "invalid signature char: " + sig[i]);
-  type.parameters.push(typeNames[sig[i]]);
- }
- return type;
-}
-
-function convertJsFunctionToWasm(func, sig) {
- if (typeof WebAssembly.Function == "function") {
-  return new WebAssembly.Function(sigToWasmTypes(sig), func);
- }
- var typeSectionBody = [ 1, 96 ];
- var sigRet = sig.slice(0, 1);
- var sigParam = sig.slice(1);
- var typeCodes = {
-  "i": 127,
-  "p": 127,
-  "j": 126,
-  "f": 125,
-  "d": 124
- };
- uleb128Encode(sigParam.length, typeSectionBody);
- for (var i = 0; i < sigParam.length; ++i) {
-  assert(sigParam[i] in typeCodes, "invalid signature char: " + sigParam[i]);
-  typeSectionBody.push(typeCodes[sigParam[i]]);
- }
- if (sigRet == "v") {
-  typeSectionBody.push(0);
- } else {
-  typeSectionBody.push(1, typeCodes[sigRet]);
- }
- var bytes = [ 0, 97, 115, 109, 1, 0, 0, 0, 1 ];
- uleb128Encode(typeSectionBody.length, bytes);
- bytes.push.apply(bytes, typeSectionBody);
- bytes.push(2, 7, 1, 1, 101, 1, 102, 0, 0, 7, 5, 1, 1, 102, 0, 0);
- var module = new WebAssembly.Module(new Uint8Array(bytes));
- var instance = new WebAssembly.Instance(module, {
-  "e": {
-   "f": func
-  }
- });
- var wrappedFunc = instance.exports["f"];
- return wrappedFunc;
-}
-
-function updateTableMap(offset, count) {
- if (functionsInTableMap) {
-  for (var i = offset; i < offset + count; i++) {
-   var item = getWasmTableEntry(i);
-   if (item) {
-    functionsInTableMap.set(item, i);
-   }
-  }
- }
-}
-
-var functionsInTableMap = undefined;
-
-var freeTableIndexes = [];
-
-function getEmptyTableSlot() {
- if (freeTableIndexes.length) {
-  return freeTableIndexes.pop();
- }
- try {
-  wasmTable.grow(1);
- } catch (err) {
-  if (!(err instanceof RangeError)) {
-   throw err;
-  }
-  throw "Unable to grow wasm table. Set ALLOW_TABLE_GROWTH.";
- }
- return wasmTable.length - 1;
-}
-
-function setWasmTableEntry(idx, func) {
- wasmTable.set(idx, func);
- wasmTableMirror[idx] = wasmTable.get(idx);
-}
-
-function addFunction(func, sig) {
- assert(typeof func != "undefined");
- if (!functionsInTableMap) {
-  functionsInTableMap = new WeakMap();
-  updateTableMap(0, wasmTable.length);
- }
- if (functionsInTableMap.has(func)) {
-  return functionsInTableMap.get(func);
- }
- var ret = getEmptyTableSlot();
- try {
-  setWasmTableEntry(ret, func);
- } catch (err) {
-  if (!(err instanceof TypeError)) {
-   throw err;
-  }
-  assert(typeof sig != "undefined", "Missing signature argument to addFunction: " + func);
-  var wrapped = convertJsFunctionToWasm(func, sig);
-  setWasmTableEntry(ret, wrapped);
- }
- functionsInTableMap.set(func, ret);
- return ret;
-}
-
-function removeFunction(index) {
- functionsInTableMap.delete(getWasmTableEntry(index));
- freeTableIndexes.push(index);
-}
-
-var ALLOC_NORMAL = 0;
-
-var ALLOC_STACK = 1;
-
-function allocate(slab, allocator) {
- var ret;
- assert(typeof allocator == "number", "allocate no longer takes a type argument");
- assert(typeof slab != "number", "allocate no longer takes a number as arg0");
- if (allocator == ALLOC_STACK) {
-  ret = stackAlloc(slab.length);
- } else {
-  ret = _malloc(slab.length);
- }
- if (!slab.subarray && !slab.slice) {
-  slab = new Uint8Array(slab);
- }
- GROWABLE_HEAP_U8().set(slab, ret);
- return ret;
-}
-
-function AsciiToString(ptr) {
- var str = "";
- while (1) {
-  var ch = GROWABLE_HEAP_U8()[ptr++ >> 0];
-  if (!ch) return str;
-  str += String.fromCharCode(ch);
- }
-}
-
-function stringToAscii(str, outPtr) {
- return writeAsciiToMemory(str, outPtr, false);
-}
-
-var UTF16Decoder = typeof TextDecoder != "undefined" ? new TextDecoder("utf-16le") : undefined;
-
-function UTF16ToString(ptr, maxBytesToRead) {
- assert(ptr % 2 == 0, "Pointer passed to UTF16ToString must be aligned to two bytes!");
- var endPtr = ptr;
- var idx = endPtr >> 1;
- var maxIdx = idx + maxBytesToRead / 2;
- while (!(idx >= maxIdx) && GROWABLE_HEAP_U16()[idx]) ++idx;
- endPtr = idx << 1;
- if (endPtr - ptr > 32 && UTF16Decoder) {
-  return UTF16Decoder.decode(GROWABLE_HEAP_U8().slice(ptr, endPtr));
- } else {
-  var str = "";
-  for (var i = 0; !(i >= maxBytesToRead / 2); ++i) {
-   var codeUnit = GROWABLE_HEAP_I16()[ptr + i * 2 >> 1];
-   if (codeUnit == 0) break;
-   str += String.fromCharCode(codeUnit);
-  }
-  return str;
- }
-}
-
-function stringToUTF16(str, outPtr, maxBytesToWrite) {
- assert(outPtr % 2 == 0, "Pointer passed to stringToUTF16 must be aligned to two bytes!");
- assert(typeof maxBytesToWrite == "number", "stringToUTF16(str, outPtr, maxBytesToWrite) is missing the third parameter that specifies the length of the output buffer!");
- if (maxBytesToWrite === undefined) {
-  maxBytesToWrite = 2147483647;
- }
- if (maxBytesToWrite < 2) return 0;
- maxBytesToWrite -= 2;
- var startPtr = outPtr;
- var numCharsToWrite = maxBytesToWrite < str.length * 2 ? maxBytesToWrite / 2 : str.length;
- for (var i = 0; i < numCharsToWrite; ++i) {
-  var codeUnit = str.charCodeAt(i);
-  GROWABLE_HEAP_I16()[outPtr >> 1] = codeUnit;
-  outPtr += 2;
- }
- GROWABLE_HEAP_I16()[outPtr >> 1] = 0;
- return outPtr - startPtr;
-}
-
-function lengthBytesUTF16(str) {
- return str.length * 2;
-}
-
-function UTF32ToString(ptr, maxBytesToRead) {
- assert(ptr % 4 == 0, "Pointer passed to UTF32ToString must be aligned to four bytes!");
- var i = 0;
- var str = "";
- while (!(i >= maxBytesToRead / 4)) {
-  var utf32 = GROWABLE_HEAP_I32()[ptr + i * 4 >> 2];
-  if (utf32 == 0) break;
-  ++i;
-  if (utf32 >= 65536) {
-   var ch = utf32 - 65536;
-   str += String.fromCharCode(55296 | ch >> 10, 56320 | ch & 1023);
-  } else {
-   str += String.fromCharCode(utf32);
-  }
- }
- return str;
-}
-
-function stringToUTF32(str, outPtr, maxBytesToWrite) {
- assert(outPtr % 4 == 0, "Pointer passed to stringToUTF32 must be aligned to four bytes!");
- assert(typeof maxBytesToWrite == "number", "stringToUTF32(str, outPtr, maxBytesToWrite) is missing the third parameter that specifies the length of the output buffer!");
- if (maxBytesToWrite === undefined) {
-  maxBytesToWrite = 2147483647;
- }
- if (maxBytesToWrite < 4) return 0;
- var startPtr = outPtr;
- var endPtr = startPtr + maxBytesToWrite - 4;
- for (var i = 0; i < str.length; ++i) {
-  var codeUnit = str.charCodeAt(i);
-  if (codeUnit >= 55296 && codeUnit <= 57343) {
-   var trailSurrogate = str.charCodeAt(++i);
-   codeUnit = 65536 + ((codeUnit & 1023) << 10) | trailSurrogate & 1023;
-  }
-  GROWABLE_HEAP_I32()[outPtr >> 2] = codeUnit;
-  outPtr += 4;
-  if (outPtr + 4 > endPtr) break;
- }
- GROWABLE_HEAP_I32()[outPtr >> 2] = 0;
- return outPtr - startPtr;
-}
-
-function lengthBytesUTF32(str) {
- var len = 0;
- for (var i = 0; i < str.length; ++i) {
-  var codeUnit = str.charCodeAt(i);
-  if (codeUnit >= 55296 && codeUnit <= 57343) ++i;
-  len += 4;
- }
- return len;
-}
-
 function allocateUTF8(str) {
  var size = lengthBytesUTF8(str) + 1;
  var ret = _malloc(size);
  if (ret) stringToUTF8Array(str, GROWABLE_HEAP_I8(), ret, size);
  return ret;
-}
-
-function allocateUTF8OnStack(str) {
- var size = lengthBytesUTF8(str) + 1;
- var ret = stackAlloc(size);
- stringToUTF8Array(str, GROWABLE_HEAP_I8(), ret, size);
- return ret;
-}
-
-function writeStringToMemory(string, buffer, dontAddNull) {
- warnOnce("writeStringToMemory is deprecated and should not be called! Use stringToUTF8() instead!");
- var lastChar, end;
- if (dontAddNull) {
-  end = buffer + lengthBytesUTF8(string);
-  lastChar = GROWABLE_HEAP_I8()[end];
- }
- stringToUTF8(string, buffer, Infinity);
- if (dontAddNull) GROWABLE_HEAP_I8()[end] = lastChar;
-}
-
-function intArrayToString(array) {
- var ret = [];
- for (var i = 0; i < array.length; i++) {
-  var chr = array[i];
-  if (chr > 255) {
-   if (ASSERTIONS) {
-    assert(false, "Character code " + chr + " (" + String.fromCharCode(chr) + ")  at offset " + i + " not in 0x00-0xFF.");
-   }
-   chr &= 255;
-  }
-  ret.push(String.fromCharCode(chr));
- }
- return ret.join("");
-}
-
-function getCFunc(ident) {
- var func = Module["_" + ident];
- assert(func, "Cannot call unknown function " + ident + ", make sure it is exported");
- return func;
-}
-
-function ccall(ident, returnType, argTypes, args, opts) {
- var toC = {
-  "string": str => {
-   var ret = 0;
-   if (str !== null && str !== undefined && str !== 0) {
-    var len = (str.length << 2) + 1;
-    ret = stackAlloc(len);
-    stringToUTF8(str, ret, len);
-   }
-   return ret;
-  },
-  "array": arr => {
-   var ret = stackAlloc(arr.length);
-   writeArrayToMemory(arr, ret);
-   return ret;
-  }
- };
- function convertReturnValue(ret) {
-  if (returnType === "string") {
-   return UTF8ToString(ret);
-  }
-  if (returnType === "boolean") return Boolean(ret);
-  return ret;
- }
- var func = getCFunc(ident);
- var cArgs = [];
- var stack = 0;
- assert(returnType !== "array", 'Return type should not be "array".');
- if (args) {
-  for (var i = 0; i < args.length; i++) {
-   var converter = toC[argTypes[i]];
-   if (converter) {
-    if (stack === 0) stack = stackSave();
-    cArgs[i] = converter(args[i]);
-   } else {
-    cArgs[i] = args[i];
-   }
-  }
- }
- var ret = func.apply(null, cArgs);
- function onDone(ret) {
-  if (stack !== 0) stackRestore(stack);
-  return convertReturnValue(ret);
- }
- ret = onDone(ret);
- return ret;
-}
-
-function cwrap(ident, returnType, argTypes, opts) {
- return function() {
-  return ccall(ident, returnType, argTypes, arguments, opts);
- };
 }
 
 PThread.init();
@@ -5888,130 +4794,6 @@ FS.FSNode = FSNode;
 
 FS.staticInit();
 
-ERRNO_CODES = {
- "EPERM": 63,
- "ENOENT": 44,
- "ESRCH": 71,
- "EINTR": 27,
- "EIO": 29,
- "ENXIO": 60,
- "E2BIG": 1,
- "ENOEXEC": 45,
- "EBADF": 8,
- "ECHILD": 12,
- "EAGAIN": 6,
- "EWOULDBLOCK": 6,
- "ENOMEM": 48,
- "EACCES": 2,
- "EFAULT": 21,
- "ENOTBLK": 105,
- "EBUSY": 10,
- "EEXIST": 20,
- "EXDEV": 75,
- "ENODEV": 43,
- "ENOTDIR": 54,
- "EISDIR": 31,
- "EINVAL": 28,
- "ENFILE": 41,
- "EMFILE": 33,
- "ENOTTY": 59,
- "ETXTBSY": 74,
- "EFBIG": 22,
- "ENOSPC": 51,
- "ESPIPE": 70,
- "EROFS": 69,
- "EMLINK": 34,
- "EPIPE": 64,
- "EDOM": 18,
- "ERANGE": 68,
- "ENOMSG": 49,
- "EIDRM": 24,
- "ECHRNG": 106,
- "EL2NSYNC": 156,
- "EL3HLT": 107,
- "EL3RST": 108,
- "ELNRNG": 109,
- "EUNATCH": 110,
- "ENOCSI": 111,
- "EL2HLT": 112,
- "EDEADLK": 16,
- "ENOLCK": 46,
- "EBADE": 113,
- "EBADR": 114,
- "EXFULL": 115,
- "ENOANO": 104,
- "EBADRQC": 103,
- "EBADSLT": 102,
- "EDEADLOCK": 16,
- "EBFONT": 101,
- "ENOSTR": 100,
- "ENODATA": 116,
- "ETIME": 117,
- "ENOSR": 118,
- "ENONET": 119,
- "ENOPKG": 120,
- "EREMOTE": 121,
- "ENOLINK": 47,
- "EADV": 122,
- "ESRMNT": 123,
- "ECOMM": 124,
- "EPROTO": 65,
- "EMULTIHOP": 36,
- "EDOTDOT": 125,
- "EBADMSG": 9,
- "ENOTUNIQ": 126,
- "EBADFD": 127,
- "EREMCHG": 128,
- "ELIBACC": 129,
- "ELIBBAD": 130,
- "ELIBSCN": 131,
- "ELIBMAX": 132,
- "ELIBEXEC": 133,
- "ENOSYS": 52,
- "ENOTEMPTY": 55,
- "ENAMETOOLONG": 37,
- "ELOOP": 32,
- "EOPNOTSUPP": 138,
- "EPFNOSUPPORT": 139,
- "ECONNRESET": 15,
- "ENOBUFS": 42,
- "EAFNOSUPPORT": 5,
- "EPROTOTYPE": 67,
- "ENOTSOCK": 57,
- "ENOPROTOOPT": 50,
- "ESHUTDOWN": 140,
- "ECONNREFUSED": 14,
- "EADDRINUSE": 3,
- "ECONNABORTED": 13,
- "ENETUNREACH": 40,
- "ENETDOWN": 38,
- "ETIMEDOUT": 73,
- "EHOSTDOWN": 142,
- "EHOSTUNREACH": 23,
- "EINPROGRESS": 26,
- "EALREADY": 7,
- "EDESTADDRREQ": 17,
- "EMSGSIZE": 35,
- "EPROTONOSUPPORT": 66,
- "ESOCKTNOSUPPORT": 137,
- "EADDRNOTAVAIL": 4,
- "ENETRESET": 39,
- "EISCONN": 30,
- "ENOTCONN": 53,
- "ETOOMANYREFS": 141,
- "EUSERS": 136,
- "EDQUOT": 19,
- "ESTALE": 72,
- "ENOTSUP": 138,
- "ENOMEDIUM": 148,
- "EILSEQ": 25,
- "EOVERFLOW": 61,
- "ECANCELED": 11,
- "ENOTRECOVERABLE": 56,
- "EOWNERDEAD": 62,
- "ESTRPIPE": 135
-};
-
 var GLctx;
 
 var __miniTempWebGLIntBuffersStorage = new Int32Array(288);
@@ -6028,1051 +4810,1980 @@ for (var i = 0; i < 288; ++i) {
 
 var proxiedFunctionTable = [ null, _proc_exit, exitOnMainThread, pthreadCreateProxied, ___syscall_fcntl64, ___syscall_ioctl, ___syscall_openat, _environ_get, _environ_sizes_get, _fd_close, _fd_read, _fd_seek, _fd_write ];
 
-var ASSERTIONS = true;
-
-function checkIncomingModuleAPI() {
- ignoredModuleProp("fetchSettings");
-}
-
 var asmLibraryArg = {
- "After_Asyn_Update_Geometry_Data": After_Asyn_Update_Geometry_Data,
- "After_Asyn_Update_Partial_Geometry_Data": After_Asyn_Update_Partial_Geometry_Data,
- "After_Asyn_Update_View": After_Asyn_Update_View,
- "After_Collision_Computing": After_Collision_Computing,
- "After_Compute_Collision": After_Compute_Collision,
- "After_Stream_To_Segment": After_Stream_To_Segment,
- "Image_External_Load": Image_External_Load,
- "On_Collision_Computed": On_Collision_Computed,
- "On_Collision_Computing": On_Collision_Computing,
- "Shader_Object_CreateVao": Shader_Object_CreateVao,
- "Shader_Object_Init": Shader_Object_Init,
- "Shader_Object_Render": Shader_Object_Render,
- "__assert_fail": ___assert_fail,
- "__emscripten_init_main_thread_js": ___emscripten_init_main_thread_js,
- "__emscripten_thread_cleanup": ___emscripten_thread_cleanup,
- "__pthread_create_js": ___pthread_create_js,
- "__pthread_kill_js": ___pthread_kill_js,
- "__syscall_fcntl64": ___syscall_fcntl64,
- "__syscall_ioctl": ___syscall_ioctl,
- "__syscall_openat": ___syscall_openat,
- "_emscripten_date_now": __emscripten_date_now,
- "_emscripten_default_pthread_stack_size": __emscripten_default_pthread_stack_size,
- "_emscripten_get_now_is_monotonic": __emscripten_get_now_is_monotonic,
- "_emscripten_notify_task_queue": __emscripten_notify_task_queue,
- "_emscripten_set_offscreencanvas_size": __emscripten_set_offscreencanvas_size,
- "_emscripten_throw_longjmp": __emscripten_throw_longjmp,
- "abort": _abort,
- "emscripten_asm_const_int": _emscripten_asm_const_int,
- "emscripten_console_log": _emscripten_console_log,
- "emscripten_exit_with_live_runtime": _emscripten_exit_with_live_runtime,
- "emscripten_get_now": _emscripten_get_now,
- "emscripten_memcpy_big": _emscripten_memcpy_big,
- "emscripten_receive_on_main_thread_js": _emscripten_receive_on_main_thread_js,
- "emscripten_resize_heap": _emscripten_resize_heap,
- "emscripten_set_timeout": _emscripten_set_timeout,
- "emscripten_unwind_to_js_event_loop": _emscripten_unwind_to_js_event_loop,
- "emscripten_webgl_create_context": _emscripten_webgl_create_context,
- "emscripten_webgl_destroy_context": _emscripten_webgl_destroy_context,
- "emscripten_webgl_get_current_context": _emscripten_webgl_get_current_context,
- "emscripten_webgl_get_drawing_buffer_size": _emscripten_webgl_get_drawing_buffer_size,
- "emscripten_webgl_init_context_attributes": _emscripten_webgl_init_context_attributes,
- "emscripten_webgl_make_context_current": _emscripten_webgl_make_context_current,
- "environ_get": _environ_get,
- "environ_sizes_get": _environ_sizes_get,
- "exit": _exit,
- "fd_close": _fd_close,
- "fd_read": _fd_read,
- "fd_seek": _fd_seek,
- "fd_write": _fd_write,
- "get_memory_size": get_memory_size,
- "glActiveTexture": _glActiveTexture,
- "glAttachShader": _glAttachShader,
- "glBindBuffer": _glBindBuffer,
- "glBindTexture": _glBindTexture,
- "glBindVertexArray": _glBindVertexArray,
- "glBlendFunc": _glBlendFunc,
- "glBufferData": _glBufferData,
- "glClear": _glClear,
- "glClearColor": _glClearColor,
- "glClearStencil": _glClearStencil,
- "glCompileShader": _glCompileShader,
- "glCreateProgram": _glCreateProgram,
- "glCreateShader": _glCreateShader,
- "glCullFace": _glCullFace,
- "glDeleteBuffers": _glDeleteBuffers,
- "glDeleteProgram": _glDeleteProgram,
- "glDeleteShader": _glDeleteShader,
- "glDeleteTextures": _glDeleteTextures,
- "glDeleteVertexArrays": _glDeleteVertexArrays,
- "glDepthMask": _glDepthMask,
- "glDepthRangef": _glDepthRangef,
- "glDetachShader": _glDetachShader,
- "glDisable": _glDisable,
- "glDrawArrays": _glDrawArrays,
- "glDrawElements": _glDrawElements,
- "glEnable": _glEnable,
- "glEnableVertexAttribArray": _glEnableVertexAttribArray,
- "glGenBuffers": _glGenBuffers,
- "glGenTextures": _glGenTextures,
- "glGenVertexArrays": _glGenVertexArrays,
- "glGenerateMipmap": _glGenerateMipmap,
- "glGetActiveAttrib": _glGetActiveAttrib,
- "glGetActiveUniform": _glGetActiveUniform,
- "glGetAttribLocation": _glGetAttribLocation,
- "glGetError": _glGetError,
- "glGetProgramInfoLog": _glGetProgramInfoLog,
- "glGetProgramiv": _glGetProgramiv,
- "glGetShaderInfoLog": _glGetShaderInfoLog,
- "glGetShaderiv": _glGetShaderiv,
- "glGetUniformLocation": _glGetUniformLocation,
- "glLinkProgram": _glLinkProgram,
- "glPolygonOffset": _glPolygonOffset,
- "glShaderSource": _glShaderSource,
- "glStencilFunc": _glStencilFunc,
- "glStencilOp": _glStencilOp,
- "glTexImage2D": _glTexImage2D,
- "glTexParameteri": _glTexParameteri,
- "glUniform1f": _glUniform1f,
- "glUniform1i": _glUniform1i,
- "glUniform1iv": _glUniform1iv,
- "glUniform2fv": _glUniform2fv,
- "glUniform3fv": _glUniform3fv,
- "glUniform4fv": _glUniform4fv,
- "glUniformMatrix4fv": _glUniformMatrix4fv,
- "glUseProgram": _glUseProgram,
- "glVertexAttrib4fv": _glVertexAttrib4fv,
- "glVertexAttribPointer": _glVertexAttribPointer,
- "glViewport": _glViewport,
- "invoke_ii": invoke_ii,
- "invoke_iii": invoke_iii,
- "invoke_iiii": invoke_iiii,
- "invoke_iiiii": invoke_iiiii,
- "invoke_v": invoke_v,
- "invoke_vi": invoke_vi,
- "invoke_vii": invoke_vii,
- "invoke_viiii": invoke_viiii,
- "memory": wasmMemory
+ "aa": After_Asyn_Update_Geometry_Data,
+ "bb": After_Asyn_Update_View,
+ "ab": After_Buffer_Geometry,
+ "$": After_Compute_Collision,
+ "$a": After_Stream_To_Geometry_Data,
+ "_a": After_Stream_To_Segment,
+ "Za": Image_External_Load,
+ "Ya": On_Collision_Computed,
+ "Xa": On_Collision_Computing,
+ "Wa": Shader_Object_CreateVao,
+ "Va": Shader_Object_Init,
+ "Ua": Shader_Object_Render,
+ "Ta": ___emscripten_init_main_thread_js,
+ "Sa": ___emscripten_thread_cleanup,
+ "Ra": ___pthread_create_js,
+ "_": ___syscall_fcntl64,
+ "Qa": ___syscall_ioctl,
+ "Pa": ___syscall_openat,
+ "La": __emscripten_default_pthread_stack_size,
+ "Ka": __emscripten_notify_task_queue,
+ "Ja": __emscripten_set_offscreencanvas_size,
+ "Ia": __emscripten_throw_longjmp,
+ "X": _abort,
+ "W": _emscripten_asm_const_int,
+ "Ha": _emscripten_console_log,
+ "n": _emscripten_get_now,
+ "Ga": _emscripten_memcpy_big,
+ "Fa": _emscripten_receive_on_main_thread_js,
+ "Ea": _emscripten_resize_heap,
+ "V": _emscripten_unwind_to_js_event_loop,
+ "Da": _emscripten_webgl_create_context,
+ "Ca": _emscripten_webgl_destroy_context,
+ "Ba": _emscripten_webgl_get_current_context,
+ "Aa": _emscripten_webgl_get_drawing_buffer_size,
+ "za": _emscripten_webgl_init_context_attributes,
+ "r": _emscripten_webgl_make_context_current,
+ "Oa": _environ_get,
+ "Na": _environ_sizes_get,
+ "U": _exit,
+ "Z": _fd_close,
+ "Ma": _fd_read,
+ "ba": _fd_seek,
+ "Y": _fd_write,
+ "l": _glActiveTexture,
+ "T": _glAttachShader,
+ "S": _glBindBuffer,
+ "p": _glBindTexture,
+ "e": _glBindVertexArray,
+ "I": _glBlendFunc,
+ "R": _glBufferData,
+ "D": _glClear,
+ "ya": _glClearColor,
+ "xa": _glClearStencil,
+ "wa": _glCompileShader,
+ "va": _glCreateProgram,
+ "ua": _glCreateShader,
+ "C": _glCullFace,
+ "f": _glDeleteBuffers,
+ "H": _glDeleteProgram,
+ "Q": _glDeleteShader,
+ "P": _glDeleteTextures,
+ "q": _glDeleteVertexArrays,
+ "B": _glDepthMask,
+ "A": _glDepthRangef,
+ "O": _glDetachShader,
+ "k": _glDisable,
+ "z": _glDrawArrays,
+ "v": _glDrawElements,
+ "j": _glEnable,
+ "ta": _glEnableVertexAttribArray,
+ "N": _glGenBuffers,
+ "sa": _glGenTextures,
+ "o": _glGenVertexArrays,
+ "M": _glGenerateMipmap,
+ "ra": _glGetActiveAttrib,
+ "qa": _glGetActiveUniform,
+ "pa": _glGetAttribLocation,
+ "oa": _glGetError,
+ "na": _glGetProgramInfoLog,
+ "u": _glGetProgramiv,
+ "ma": _glGetShaderInfoLog,
+ "L": _glGetShaderiv,
+ "la": _glGetUniformLocation,
+ "ka": _glLinkProgram,
+ "y": _glPolygonOffset,
+ "ja": _glShaderSource,
+ "t": _glStencilFunc,
+ "s": _glStencilOp,
+ "x": _glTexImage2D,
+ "i": _glTexParameteri,
+ "c": _glUniform1f,
+ "b": _glUniform1i,
+ "ia": _glUniform1iv,
+ "K": _glUniform2fv,
+ "d": _glUniform3fv,
+ "G": _glUniform4fv,
+ "g": _glUniformMatrix4fv,
+ "m": _glUseProgram,
+ "h": _glVertexAttrib4fv,
+ "ha": _glVertexAttribPointer,
+ "w": _glViewport,
+ "ga": invoke_ii,
+ "F": invoke_iii,
+ "fa": invoke_iiii,
+ "ea": invoke_iiiii,
+ "J": invoke_v,
+ "da": invoke_vi,
+ "ca": invoke_vii,
+ "E": invoke_viiii,
+ "a": wasmMemory
 };
 
 var asm = createWasm();
 
-var ___wasm_call_ctors = Module["___wasm_call_ctors"] = createExportWrapper("__wasm_call_ctors");
-
-var _GS_Add_Font_Library = Module["_GS_Add_Font_Library"] = createExportWrapper("GS_Add_Font_Library");
-
-var _GS_Set_Driver_Configs = Module["_GS_Set_Driver_Configs"] = createExportWrapper("GS_Set_Driver_Configs");
-
-var _GS_Set_Driver_Options = Module["_GS_Set_Driver_Options"] = createExportWrapper("GS_Set_Driver_Options");
-
-var _GS_Show_Driver_Options = Module["_GS_Show_Driver_Options"] = createExportWrapper("GS_Show_Driver_Options");
-
-var _GS_Show_One_Driver_Option = Module["_GS_Show_One_Driver_Option"] = createExportWrapper("GS_Show_One_Driver_Option");
-
-var _GS_Set_Shader = Module["_GS_Set_Shader"] = createExportWrapper("GS_Set_Shader");
-
-var _GS_UnSet_Shader = Module["_GS_UnSet_Shader"] = createExportWrapper("GS_UnSet_Shader");
-
-var _GS_Show_Shader = Module["_GS_Show_Shader"] = createExportWrapper("GS_Show_Shader");
-
-var _GS_Show_One_Shader = Module["_GS_Show_One_Shader"] = createExportWrapper("GS_Show_One_Shader");
-
-var _GS_Set_Viewport = Module["_GS_Set_Viewport"] = createExportWrapper("GS_Set_Viewport");
-
-var _GS_UnSet_Viewport = Module["_GS_UnSet_Viewport"] = createExportWrapper("GS_UnSet_Viewport");
-
-var _GS_Show_Viewport = Module["_GS_Show_Viewport"] = createExportWrapper("GS_Show_Viewport");
-
-var _GS_Set_Camera = Module["_GS_Set_Camera"] = createExportWrapper("GS_Set_Camera");
-
-var _GS_Set_Camera_Position = Module["_GS_Set_Camera_Position"] = createExportWrapper("GS_Set_Camera_Position");
-
-var _GS_Set_Camera_Target = Module["_GS_Set_Camera_Target"] = createExportWrapper("GS_Set_Camera_Target");
-
-var _GS_Set_Camera_Up = Module["_GS_Set_Camera_Up"] = createExportWrapper("GS_Set_Camera_Up");
-
-var _GS_Set_Camera_Field = Module["_GS_Set_Camera_Field"] = createExportWrapper("GS_Set_Camera_Field");
-
-var _GS_Set_Camera_Extent = Module["_GS_Set_Camera_Extent"] = createExportWrapper("GS_Set_Camera_Extent");
-
-var _GS_Set_Camera_Projection = Module["_GS_Set_Camera_Projection"] = createExportWrapper("GS_Set_Camera_Projection");
-
-var _GS_Keep_Camera_Ratio = Module["_GS_Keep_Camera_Ratio"] = createExportWrapper("GS_Keep_Camera_Ratio");
-
-var _GS_Show_Camera = Module["_GS_Show_Camera"] = createExportWrapper("GS_Show_Camera");
-
-var _GS_Show_Camera_Position = Module["_GS_Show_Camera_Position"] = createExportWrapper("GS_Show_Camera_Position");
-
-var _GS_Show_Camera_Target = Module["_GS_Show_Camera_Target"] = createExportWrapper("GS_Show_Camera_Target");
-
-var _GS_Show_Camera_Up = Module["_GS_Show_Camera_Up"] = createExportWrapper("GS_Show_Camera_Up");
-
-var _GS_Show_Camera_Field = Module["_GS_Show_Camera_Field"] = createExportWrapper("GS_Show_Camera_Field");
-
-var _GS_Show_Camera_Extent = Module["_GS_Show_Camera_Extent"] = createExportWrapper("GS_Show_Camera_Extent");
-
-var _GS_Show_Camera_Projection = Module["_GS_Show_Camera_Projection"] = createExportWrapper("GS_Show_Camera_Projection");
-
-var _GS_Show_Camera_Projection_Matrix = Module["_GS_Show_Camera_Projection_Matrix"] = createExportWrapper("GS_Show_Camera_Projection_Matrix");
-
-var _GS_Show_Camera_View_Matrix = Module["_GS_Show_Camera_View_Matrix"] = createExportWrapper("GS_Show_Camera_View_Matrix");
-
-var _GS_Show_Path_Camera_Position = Module["_GS_Show_Path_Camera_Position"] = createExportWrapper("GS_Show_Path_Camera_Position");
-
-var _GS_Show_Path_Camera_Target = Module["_GS_Show_Path_Camera_Target"] = createExportWrapper("GS_Show_Path_Camera_Target");
-
-var _GS_Dolly_Camera = Module["_GS_Dolly_Camera"] = createExportWrapper("GS_Dolly_Camera");
-
-var _GS_Roll_Camera = Module["_GS_Roll_Camera"] = createExportWrapper("GS_Roll_Camera");
-
-var _GS_Zoom_Camera = Module["_GS_Zoom_Camera"] = createExportWrapper("GS_Zoom_Camera");
-
-var _GS_UnSet_Camera = Module["_GS_UnSet_Camera"] = createExportWrapper("GS_UnSet_Camera");
-
-var _GS_Set_Color = Module["_GS_Set_Color"] = createExportWrapper("GS_Set_Color");
-
-var _GS_UnSet_Color = Module["_GS_UnSet_Color"] = createExportWrapper("GS_UnSet_Color");
-
-var _GS_UnSet_One_Color = Module["_GS_UnSet_One_Color"] = createExportWrapper("GS_UnSet_One_Color");
-
-var _GS_Show_Color = Module["_GS_Show_Color"] = createExportWrapper("GS_Show_Color");
-
-var _GS_Show_One_Color = Module["_GS_Show_One_Color"] = createExportWrapper("GS_Show_One_Color");
-
-var _GS_Show_Color_By_Value = Module["_GS_Show_Color_By_Value"] = createExportWrapper("GS_Show_Color_By_Value");
-
-var _GS_Set_Visibility = Module["_GS_Set_Visibility"] = createExportWrapper("GS_Set_Visibility");
-
-var _GS_Show_Visibility = Module["_GS_Show_Visibility"] = createExportWrapper("GS_Show_Visibility");
-
-var _GS_Show_One_Visibility = Module["_GS_Show_One_Visibility"] = createExportWrapper("GS_Show_One_Visibility");
-
-var _GS_UnSet_Visibility = Module["_GS_UnSet_Visibility"] = createExportWrapper("GS_UnSet_Visibility");
-
-var _GS_UnSet_One_Visibility = Module["_GS_UnSet_One_Visibility"] = createExportWrapper("GS_UnSet_One_Visibility");
-
-var _GS_Set_Selectability = Module["_GS_Set_Selectability"] = createExportWrapper("GS_Set_Selectability");
-
-var _GS_UnSet_Selectability = Module["_GS_UnSet_Selectability"] = createExportWrapper("GS_UnSet_Selectability");
-
-var _GS_UnSet_One_Selectability = Module["_GS_UnSet_One_Selectability"] = createExportWrapper("GS_UnSet_One_Selectability");
-
-var _GS_Show_Selectability = Module["_GS_Show_Selectability"] = createExportWrapper("GS_Show_Selectability");
-
-var _GS_Show_One_Selectability = Module["_GS_Show_One_Selectability"] = createExportWrapper("GS_Show_One_Selectability");
-
-var _GS_Set_Rendering_Options = Module["_GS_Set_Rendering_Options"] = createExportWrapper("GS_Set_Rendering_Options");
-
-var _GS_UnSet_Rendering_Options = Module["_GS_UnSet_Rendering_Options"] = createExportWrapper("GS_UnSet_Rendering_Options");
-
-var _GS_UnSet_One_Rendering_Option = Module["_GS_UnSet_One_Rendering_Option"] = createExportWrapper("GS_UnSet_One_Rendering_Option");
-
-var _GS_Show_Rendering_Options = Module["_GS_Show_Rendering_Options"] = createExportWrapper("GS_Show_Rendering_Options");
-
-var _GS_Show_One_Rendering_Option = Module["_GS_Show_One_Rendering_Option"] = createExportWrapper("GS_Show_One_Rendering_Option");
-
-var _GS_Show_One_Path_Rendering_Option = Module["_GS_Show_One_Path_Rendering_Option"] = createExportWrapper("GS_Show_One_Path_Rendering_Option");
-
-var _GS_Show_One_Default_Rendering_Option = Module["_GS_Show_One_Default_Rendering_Option"] = createExportWrapper("GS_Show_One_Default_Rendering_Option");
-
-var _GS_Set_Heuristic_Options = Module["_GS_Set_Heuristic_Options"] = createExportWrapper("GS_Set_Heuristic_Options");
-
-var _GS_UnSet_Heuristic_Options = Module["_GS_UnSet_Heuristic_Options"] = createExportWrapper("GS_UnSet_Heuristic_Options");
-
-var _GS_UnSet_One_Heuristic_Option = Module["_GS_UnSet_One_Heuristic_Option"] = createExportWrapper("GS_UnSet_One_Heuristic_Option");
-
-var _GS_Show_Heuristic_Options = Module["_GS_Show_Heuristic_Options"] = createExportWrapper("GS_Show_Heuristic_Options");
-
-var _GS_Show_One_Heuristic_Option = Module["_GS_Show_One_Heuristic_Option"] = createExportWrapper("GS_Show_One_Heuristic_Option");
-
-var _GS_Set_ModellingMatrix = Module["_GS_Set_ModellingMatrix"] = createExportWrapper("GS_Set_ModellingMatrix");
-
-var _GS_UnSet_ModellingMatrix = Module["_GS_UnSet_ModellingMatrix"] = createExportWrapper("GS_UnSet_ModellingMatrix");
-
-var _GS_Append_ModellingMatrix = Module["_GS_Append_ModellingMatrix"] = createExportWrapper("GS_Append_ModellingMatrix");
-
-var _GS_Show_ModellingMatrix = Module["_GS_Show_ModellingMatrix"] = createExportWrapper("GS_Show_ModellingMatrix");
-
-var _GS_Show_Path_ModellingMatrix = Module["_GS_Show_Path_ModellingMatrix"] = createExportWrapper("GS_Show_Path_ModellingMatrix");
-
-var _GS_Set_Condition = Module["_GS_Set_Condition"] = createExportWrapper("GS_Set_Condition");
-
-var _GS_UnSet_Condition = Module["_GS_UnSet_Condition"] = createExportWrapper("GS_UnSet_Condition");
-
-var _GS_Show_Condition = Module["_GS_Show_Condition"] = createExportWrapper("GS_Show_Condition");
-
-var _GS_Set_Text_Font = Module["_GS_Set_Text_Font"] = createExportWrapper("GS_Set_Text_Font");
-
-var _GS_UnSet_Text_Font = Module["_GS_UnSet_Text_Font"] = createExportWrapper("GS_UnSet_Text_Font");
-
-var _GS_UnSet_One_Text_Font = Module["_GS_UnSet_One_Text_Font"] = createExportWrapper("GS_UnSet_One_Text_Font");
-
-var _GS_Show_Text_Font = Module["_GS_Show_Text_Font"] = createExportWrapper("GS_Show_Text_Font");
-
-var _GS_Show_One_Text_Font = Module["_GS_Show_One_Text_Font"] = createExportWrapper("GS_Show_One_Text_Font");
-
-var _GS_Attribute_Exists = Module["_GS_Attribute_Exists"] = createExportWrapper("GS_Attribute_Exists");
-
-var _GS_Make_Context_Current = Module["_GS_Make_Context_Current"] = createExportWrapper("GS_Make_Context_Current");
-
-var _GS_Show_Asyn_Buffer_Geometry_Count = Module["_GS_Show_Asyn_Buffer_Geometry_Count"] = createExportWrapper("GS_Show_Asyn_Buffer_Geometry_Count");
-
-var _GS_Show_Asyn_Buffer_Geometry_Keys = Module["_GS_Show_Asyn_Buffer_Geometry_Keys"] = createExportWrapper("GS_Show_Asyn_Buffer_Geometry_Keys");
-
-var _GS_Show_Asyn_Unbuffer_Geometry_Count = Module["_GS_Show_Asyn_Unbuffer_Geometry_Count"] = createExportWrapper("GS_Show_Asyn_Unbuffer_Geometry_Count");
-
-var _GS_Show_Asyn_Unbuffer_Geometry_Keys = Module["_GS_Show_Asyn_Unbuffer_Geometry_Keys"] = createExportWrapper("GS_Show_Asyn_Unbuffer_Geometry_Keys");
-
-var _GS_Show_Asyn_Geometry_Data_Count = Module["_GS_Show_Asyn_Geometry_Data_Count"] = createExportWrapper("GS_Show_Asyn_Geometry_Data_Count");
-
-var _GS_Show_Asyn_Geometry_Data_Keys = Module["_GS_Show_Asyn_Geometry_Data_Keys"] = createExportWrapper("GS_Show_Asyn_Geometry_Data_Keys");
-
-var _GS_Show_Asyn_Remove_Geometry_Data_Keys = Module["_GS_Show_Asyn_Remove_Geometry_Data_Keys"] = createExportWrapper("GS_Show_Asyn_Remove_Geometry_Data_Keys");
-
-var _gsGetError = Module["_gsGetError"] = createExportWrapper("gsGetError");
-
-var _GS_Init_Database = Module["_GS_Init_Database"] = createExportWrapper("GS_Init_Database");
-
-var _GS_Fina_Database = Module["_GS_Fina_Database"] = createExportWrapper("GS_Fina_Database");
-
-var _GS_Update_Display = Module["_GS_Update_Display"] = createExportWrapper("GS_Update_Display");
-
-var _GS_Update_View_Display_By_Key = Module["_GS_Update_View_Display_By_Key"] = createExportWrapper("GS_Update_View_Display_By_Key");
-
-var _GS_Update_View_Display_With_Framerate_By_Key = Module["_GS_Update_View_Display_With_Framerate_By_Key"] = createExportWrapper("GS_Update_View_Display_With_Framerate_By_Key");
-
-var _GS_Update_View_Display_With_Time_By_Key = Module["_GS_Update_View_Display_With_Time_By_Key"] = createExportWrapper("GS_Update_View_Display_With_Time_By_Key");
-
-var _GS_Asyn_Update_Geometry_Data_By_Key = Module["_GS_Asyn_Update_Geometry_Data_By_Key"] = createExportWrapper("GS_Asyn_Update_Geometry_Data_By_Key");
-
-var _GS_Asyn_Update_Partial_Geometry_Data_By_Key = Module["_GS_Asyn_Update_Partial_Geometry_Data_By_Key"] = createExportWrapper("GS_Asyn_Update_Partial_Geometry_Data_By_Key");
-
-var _GS_Asyn_Update_Geometry_By_Key = Module["_GS_Asyn_Update_Geometry_By_Key"] = createExportWrapper("GS_Asyn_Update_Geometry_By_Key");
-
-var _GS_Asyn_Update_Camera_By_Key = Module["_GS_Asyn_Update_Camera_By_Key"] = createExportWrapper("GS_Asyn_Update_Camera_By_Key");
-
-var _GS_Asyn_Update_View_By_Key = Module["_GS_Asyn_Update_View_By_Key"] = createExportWrapper("GS_Asyn_Update_View_By_Key");
-
-var _GS_Asyn_Buffer_Geometry_By_Key = Module["_GS_Asyn_Buffer_Geometry_By_Key"] = createExportWrapper("GS_Asyn_Buffer_Geometry_By_Key");
-
-var _GS_Asyn_Unbuffer_Geometry_By_Key = Module["_GS_Asyn_Unbuffer_Geometry_By_Key"] = createExportWrapper("GS_Asyn_Unbuffer_Geometry_By_Key");
-
-var _GS_Asyn_Render_View_By_Key = Module["_GS_Asyn_Render_View_By_Key"] = createExportWrapper("GS_Asyn_Render_View_By_Key");
-
-var _GS_Asyn_Need_Update_View_By_Key = Module["_GS_Asyn_Need_Update_View_By_Key"] = createExportWrapper("GS_Asyn_Need_Update_View_By_Key");
-
-var _GS_Save_Segment = Module["_GS_Save_Segment"] = createExportWrapper("GS_Save_Segment");
-
-var _GS_Save_Segment_By_Key = Module["_GS_Save_Segment_By_Key"] = createExportWrapper("GS_Save_Segment_By_Key");
-
-var _GS_Load_Segment = Module["_GS_Load_Segment"] = createExportWrapper("GS_Load_Segment");
-
-var _GS_Load_Segment_With_Compression = Module["_GS_Load_Segment_With_Compression"] = createExportWrapper("GS_Load_Segment_With_Compression");
-
-var _GS_Load_Segment_By_Key = Module["_GS_Load_Segment_By_Key"] = createExportWrapper("GS_Load_Segment_By_Key");
-
-var _GS_Load_Segment_With_Compression_By_Key = Module["_GS_Load_Segment_With_Compression_By_Key"] = createExportWrapper("GS_Load_Segment_With_Compression_By_Key");
-
-var _GS_Segment_To_Stream = Module["_GS_Segment_To_Stream"] = createExportWrapper("GS_Segment_To_Stream");
-
-var _GS_Segment_To_Stream_By_Key = Module["_GS_Segment_To_Stream_By_Key"] = createExportWrapper("GS_Segment_To_Stream_By_Key");
-
-var _GS_Segment_To_Stream_With_Compression = Module["_GS_Segment_To_Stream_With_Compression"] = createExportWrapper("GS_Segment_To_Stream_With_Compression");
-
-var _GS_Segment_To_Stream_With_Compression_By_Key = Module["_GS_Segment_To_Stream_With_Compression_By_Key"] = createExportWrapper("GS_Segment_To_Stream_With_Compression_By_Key");
-
-var _GS_Stream_To_Segment = Module["_GS_Stream_To_Segment"] = createExportWrapper("GS_Stream_To_Segment");
-
-var _GS_Stream_To_Segment_By_Key = Module["_GS_Stream_To_Segment_By_Key"] = createExportWrapper("GS_Stream_To_Segment_By_Key");
-
-var _GS_Stream_With_Compression_To_Segment = Module["_GS_Stream_With_Compression_To_Segment"] = createExportWrapper("GS_Stream_With_Compression_To_Segment");
-
-var _GS_Stream_With_Compression_To_Segment_By_Key = Module["_GS_Stream_With_Compression_To_Segment_By_Key"] = createExportWrapper("GS_Stream_With_Compression_To_Segment_By_Key");
-
-var _GS_Segment_Data_To_Stream = Module["_GS_Segment_Data_To_Stream"] = createExportWrapper("GS_Segment_Data_To_Stream");
-
-var _GS_Stream_To_Segment_Data = Module["_GS_Stream_To_Segment_Data"] = createExportWrapper("GS_Stream_To_Segment_Data");
-
-var _GS_Geometry_Data_To_Stream = Module["_GS_Geometry_Data_To_Stream"] = createExportWrapper("GS_Geometry_Data_To_Stream");
-
-var _GS_Geometry_Data_To_Stream_With_Compression = Module["_GS_Geometry_Data_To_Stream_With_Compression"] = createExportWrapper("GS_Geometry_Data_To_Stream_With_Compression");
-
-var _GS_Stream_To_Geometry_Data_With_Compression = Module["_GS_Stream_To_Geometry_Data_With_Compression"] = createExportWrapper("GS_Stream_To_Geometry_Data_With_Compression");
-
-var _GS_Stream_To_Geometry_Data = Module["_GS_Stream_To_Geometry_Data"] = createExportWrapper("GS_Stream_To_Geometry_Data");
-
-var _GS_Stream_To_Geometry_Data_By_Key = Module["_GS_Stream_To_Geometry_Data_By_Key"] = createExportWrapper("GS_Stream_To_Geometry_Data_By_Key");
-
-var _GS_Copy_Segment_By_Key = Module["_GS_Copy_Segment_By_Key"] = createExportWrapper("GS_Copy_Segment_By_Key");
-
-var _GS_Compress_File = Module["_GS_Compress_File"] = createExportWrapper("GS_Compress_File");
-
-var _GS_Define_Error_Handler = Module["_GS_Define_Error_Handler"] = createExportWrapper("GS_Define_Error_Handler");
-
-var _GS_Define_Log_Handler = Module["_GS_Define_Log_Handler"] = createExportWrapper("GS_Define_Log_Handler");
-
-var _GS_Show_Database_Info = Module["_GS_Show_Database_Info"] = createExportWrapper("GS_Show_Database_Info");
-
-var _GS_Insert_Marker = Module["_GS_Insert_Marker"] = createExportWrapper("GS_Insert_Marker");
-
-var _GS_Edit_Marker = Module["_GS_Edit_Marker"] = createExportWrapper("GS_Edit_Marker");
-
-var _GS_Show_Marker = Module["_GS_Show_Marker"] = createExportWrapper("GS_Show_Marker");
-
-var _GS_Insert_Point_Cloud = Module["_GS_Insert_Point_Cloud"] = createExportWrapper("GS_Insert_Point_Cloud");
-
-var _GS_Edit_Point_Cloud = Module["_GS_Edit_Point_Cloud"] = createExportWrapper("GS_Edit_Point_Cloud");
-
-var _GS_Show_Point_Cloud_Count = Module["_GS_Show_Point_Cloud_Count"] = createExportWrapper("GS_Show_Point_Cloud_Count");
-
-var _GS_Show_Point_Cloud = Module["_GS_Show_Point_Cloud"] = createExportWrapper("GS_Show_Point_Cloud");
-
-var _GS_Insert_Line = Module["_GS_Insert_Line"] = createExportWrapper("GS_Insert_Line");
-
-var _GS_Show_Line = Module["_GS_Show_Line"] = createExportWrapper("GS_Show_Line");
-
-var _GS_Edit_Line = Module["_GS_Edit_Line"] = createExportWrapper("GS_Edit_Line");
-
-var _GS_Insert_Polyline = Module["_GS_Insert_Polyline"] = createExportWrapper("GS_Insert_Polyline");
-
-var _GS_Show_Polyline = Module["_GS_Show_Polyline"] = createExportWrapper("GS_Show_Polyline");
-
-var _GS_Show_Polyline_Count = Module["_GS_Show_Polyline_Count"] = createExportWrapper("GS_Show_Polyline_Count");
-
-var _GS_Edit_Polyline = Module["_GS_Edit_Polyline"] = createExportWrapper("GS_Edit_Polyline");
-
-var _GS_Insert_Circular_Arc = Module["_GS_Insert_Circular_Arc"] = createExportWrapper("GS_Insert_Circular_Arc");
-
-var _GS_Show_Circular_Arc = Module["_GS_Show_Circular_Arc"] = createExportWrapper("GS_Show_Circular_Arc");
-
-var _GS_Edit_Circular_Arc = Module["_GS_Edit_Circular_Arc"] = createExportWrapper("GS_Edit_Circular_Arc");
-
-var _GS_Insert_Ellipse_Arc = Module["_GS_Insert_Ellipse_Arc"] = createExportWrapper("GS_Insert_Ellipse_Arc");
-
-var _GS_Show_Ellipse_Arc = Module["_GS_Show_Ellipse_Arc"] = createExportWrapper("GS_Show_Ellipse_Arc");
-
-var _GS_Edit_Ellipse_Arc = Module["_GS_Edit_Ellipse_Arc"] = createExportWrapper("GS_Edit_Ellipse_Arc");
-
-var _GS_Insert_Circle = Module["_GS_Insert_Circle"] = createExportWrapper("GS_Insert_Circle");
-
-var _GS_Show_Circle = Module["_GS_Show_Circle"] = createExportWrapper("GS_Show_Circle");
-
-var _GS_Edit_Circle = Module["_GS_Edit_Circle"] = createExportWrapper("GS_Edit_Circle");
-
-var _GS_Insert_Ellipse = Module["_GS_Insert_Ellipse"] = createExportWrapper("GS_Insert_Ellipse");
-
-var _GS_Show_Ellipse = Module["_GS_Show_Ellipse"] = createExportWrapper("GS_Show_Ellipse");
-
-var _GS_Edit_Ellipse = Module["_GS_Edit_Ellipse"] = createExportWrapper("GS_Edit_Ellipse");
-
-var _GS_Insert_Cylinder = Module["_GS_Insert_Cylinder"] = createExportWrapper("GS_Insert_Cylinder");
-
-var _GS_Show_Cylinder = Module["_GS_Show_Cylinder"] = createExportWrapper("GS_Show_Cylinder");
-
-var _GS_Edit_Cylinder = Module["_GS_Edit_Cylinder"] = createExportWrapper("GS_Edit_Cylinder");
-
-var _GS_Insert_PolyCylinder = Module["_GS_Insert_PolyCylinder"] = createExportWrapper("GS_Insert_PolyCylinder");
-
-var _GS_Show_PolyCylinder_Count = Module["_GS_Show_PolyCylinder_Count"] = createExportWrapper("GS_Show_PolyCylinder_Count");
-
-var _GS_Show_PolyCylinder = Module["_GS_Show_PolyCylinder"] = createExportWrapper("GS_Show_PolyCylinder");
-
-var _GS_Edit_PolyCylinder = Module["_GS_Edit_PolyCylinder"] = createExportWrapper("GS_Edit_PolyCylinder");
-
-var _GS_Insert_Shell = Module["_GS_Insert_Shell"] = createExportWrapper("GS_Insert_Shell");
-
-var _GS_Edit_Shell = Module["_GS_Edit_Shell"] = createExportWrapper("GS_Edit_Shell");
-
-var _GS_Show_Shell = Module["_GS_Show_Shell"] = createExportWrapper("GS_Show_Shell");
-
-var _GS_Show_Shell_Size = Module["_GS_Show_Shell_Size"] = createExportWrapper("GS_Show_Shell_Size");
-
-var _GS_Insert_Triangular_Shell = Module["_GS_Insert_Triangular_Shell"] = createExportWrapper("GS_Insert_Triangular_Shell");
-
-var _GS_Insert_Mesh = Module["_GS_Insert_Mesh"] = createExportWrapper("GS_Insert_Mesh");
-
-var _GS_Edit_Mesh_Points = Module["_GS_Edit_Mesh_Points"] = createExportWrapper("GS_Edit_Mesh_Points");
-
-var _GS_Show_Mesh_Size = Module["_GS_Show_Mesh_Size"] = createExportWrapper("GS_Show_Mesh_Size");
-
-var _GS_Show_Mesh = Module["_GS_Show_Mesh"] = createExportWrapper("GS_Show_Mesh");
-
-var _GS_Insert_Light = Module["_GS_Insert_Light"] = createExportWrapper("GS_Insert_Light");
-
-var _GS_Edit_Light = Module["_GS_Edit_Light"] = createExportWrapper("GS_Edit_Light");
-
-var _GS_Show_Light = Module["_GS_Show_Light"] = createExportWrapper("GS_Show_Light");
-
-var _GS_Insert_Image = Module["_GS_Insert_Image"] = createExportWrapper("GS_Insert_Image");
-
-var _GS_Set_Image_Options = Module["_GS_Set_Image_Options"] = createExportWrapper("GS_Set_Image_Options");
-
-var _GS_UnSet_One_Image_Option = Module["_GS_UnSet_One_Image_Option"] = createExportWrapper("GS_UnSet_One_Image_Option");
-
-var _GS_Set_Image_Data = Module["_GS_Set_Image_Data"] = createExportWrapper("GS_Set_Image_Data");
-
-var _GS_UnSet_Image_Data = Module["_GS_UnSet_Image_Data"] = createExportWrapper("GS_UnSet_Image_Data");
-
-var _GS_Show_Image_Position = Module["_GS_Show_Image_Position"] = createExportWrapper("GS_Show_Image_Position");
-
-var _GS_Show_Image_Size = Module["_GS_Show_Image_Size"] = createExportWrapper("GS_Show_Image_Size");
-
-var _GS_Show_Image_Data_Size = Module["_GS_Show_Image_Data_Size"] = createExportWrapper("GS_Show_Image_Data_Size");
-
-var _GS_Show_Image_Data = Module["_GS_Show_Image_Data"] = createExportWrapper("GS_Show_Image_Data");
-
-var _GS_Show_Image_Options = Module["_GS_Show_Image_Options"] = createExportWrapper("GS_Show_Image_Options");
-
-var _GS_Show_One_Image_Option = Module["_GS_Show_One_Image_Option"] = createExportWrapper("GS_Show_One_Image_Option");
-
-var _GS_Show_Image = Module["_GS_Show_Image"] = createExportWrapper("GS_Show_Image");
-
-var _GS_Insert_Cutting_Planes = Module["_GS_Insert_Cutting_Planes"] = createExportWrapper("GS_Insert_Cutting_Planes");
-
-var _GS_Edit_Cutting_Planes = Module["_GS_Edit_Cutting_Planes"] = createExportWrapper("GS_Edit_Cutting_Planes");
-
-var _GS_Show_Cutting_Planes = Module["_GS_Show_Cutting_Planes"] = createExportWrapper("GS_Show_Cutting_Planes");
-
-var _GS_Image_Exists = Module["_GS_Image_Exists"] = createExportWrapper("GS_Image_Exists");
-
-var _GS_Set_Geometry_Color = Module["_GS_Set_Geometry_Color"] = createExportWrapper("GS_Set_Geometry_Color");
-
-var _GS_Set_Geometry_Color_By_Value = Module["_GS_Set_Geometry_Color_By_Value"] = createExportWrapper("GS_Set_Geometry_Color_By_Value");
-
-var _GS_Show_Geometry_Color_Type = Module["_GS_Show_Geometry_Color_Type"] = createExportWrapper("GS_Show_Geometry_Color_Type");
-
-var _GS_Show_Geometry_Color_By_Value = Module["_GS_Show_Geometry_Color_By_Value"] = createExportWrapper("GS_Show_Geometry_Color_By_Value");
-
-var _GS_UnSet_Geometry_Color = Module["_GS_UnSet_Geometry_Color"] = createExportWrapper("GS_UnSet_Geometry_Color");
-
-var _GS_Show_Geometry_Vertices_Position_By_Indexes = Module["_GS_Show_Geometry_Vertices_Position_By_Indexes"] = createExportWrapper("GS_Show_Geometry_Vertices_Position_By_Indexes");
-
-var _GS_Show_Geometry_Element_Type = Module["_GS_Show_Geometry_Element_Type"] = createExportWrapper("GS_Show_Geometry_Element_Type");
-
-var _GS_Set_Geometry_Texture_Coords = Module["_GS_Set_Geometry_Texture_Coords"] = createExportWrapper("GS_Set_Geometry_Texture_Coords");
-
-var _GS_Show_Geometry_Texture_Coords = Module["_GS_Show_Geometry_Texture_Coords"] = createExportWrapper("GS_Show_Geometry_Texture_Coords");
-
-var _GS_UnSet_Geometry_Texture_Coords = Module["_GS_UnSet_Geometry_Texture_Coords"] = createExportWrapper("GS_UnSet_Geometry_Texture_Coords");
-
-var _GS_Set_Geometry_Normals = Module["_GS_Set_Geometry_Normals"] = createExportWrapper("GS_Set_Geometry_Normals");
-
-var _GS_Show_Geometry_Normals = Module["_GS_Show_Geometry_Normals"] = createExportWrapper("GS_Show_Geometry_Normals");
-
-var _GS_UnSet_Geometry_Normals = Module["_GS_UnSet_Geometry_Normals"] = createExportWrapper("GS_UnSet_Geometry_Normals");
-
-var _GS_Apply_ModellingMatrix = Module["_GS_Apply_ModellingMatrix"] = createExportWrapper("GS_Apply_ModellingMatrix");
-
-var _GS_Merge_Shell = Module["_GS_Merge_Shell"] = createExportWrapper("GS_Merge_Shell");
-
-var _GS_Insert_Vector_Text = Module["_GS_Insert_Vector_Text"] = createExportWrapper("GS_Insert_Vector_Text");
-
-var _GS_Extrude_By_Shell = Module["_GS_Extrude_By_Shell"] = createExportWrapper("GS_Extrude_By_Shell");
-
-var _GS_DExtrude_By_Shell = Module["_GS_DExtrude_By_Shell"] = createExportWrapper("GS_DExtrude_By_Shell");
-
-var _GS_Rotate_By_Shell = Module["_GS_Rotate_By_Shell"] = createExportWrapper("GS_Rotate_By_Shell");
-
-var _GS_DRotate_By_Shell = Module["_GS_DRotate_By_Shell"] = createExportWrapper("GS_DRotate_By_Shell");
-
-var _GS_Sweep_By_Shell = Module["_GS_Sweep_By_Shell"] = createExportWrapper("GS_Sweep_By_Shell");
-
-var _GS_DSweep_By_Shell = Module["_GS_DSweep_By_Shell"] = createExportWrapper("GS_DSweep_By_Shell");
-
-var _GS_Compute_Geometry_Intersection = Module["_GS_Compute_Geometry_Intersection"] = createExportWrapper("GS_Compute_Geometry_Intersection");
-
-var _GS_Compute_Geometry_Tessellate_Data = Module["_GS_Compute_Geometry_Tessellate_Data"] = createExportWrapper("GS_Compute_Geometry_Tessellate_Data");
-
-var _GS_Show_Geometry_Tessellate_Data_Count = Module["_GS_Show_Geometry_Tessellate_Data_Count"] = createExportWrapper("GS_Show_Geometry_Tessellate_Data_Count");
-
-var _GS_Show_Geometry_Tessellate_Data = Module["_GS_Show_Geometry_Tessellate_Data"] = createExportWrapper("GS_Show_Geometry_Tessellate_Data");
-
-var _GS_Clear_Geometry_Tessellate_Data = Module["_GS_Clear_Geometry_Tessellate_Data"] = createExportWrapper("GS_Clear_Geometry_Tessellate_Data");
-
-var _GS_Compute_Polygon_Area = Module["_GS_Compute_Polygon_Area"] = createExportWrapper("GS_Compute_Polygon_Area");
-
-var _GS_Compute_Geometry_Area = Module["_GS_Compute_Geometry_Area"] = createExportWrapper("GS_Compute_Geometry_Area");
-
-var _GS_Compute_Geometry_Volume = Module["_GS_Compute_Geometry_Volume"] = createExportWrapper("GS_Compute_Geometry_Volume");
-
-var _GS_Insert_Parametric_Geometry = Module["_GS_Insert_Parametric_Geometry"] = createExportWrapper("GS_Insert_Parametric_Geometry");
-
-var _GS_Edit_Parametric_Geometry = Module["_GS_Edit_Parametric_Geometry"] = createExportWrapper("GS_Edit_Parametric_Geometry");
-
-var _GS_Show_Parametric_Geometry = Module["_GS_Show_Parametric_Geometry"] = createExportWrapper("GS_Show_Parametric_Geometry");
-
-var _GS_Resize_By_Key = Module["_GS_Resize_By_Key"] = createExportWrapper("GS_Resize_By_Key");
-
-var _GS_Show_Key_Type = Module["_GS_Show_Key_Type"] = createExportWrapper("GS_Show_Key_Type");
-
-var _GS_Is_Valid_Key = Module["_GS_Is_Valid_Key"] = createExportWrapper("GS_Is_Valid_Key");
-
-var _GS_Show_Owner_By_Key = Module["_GS_Show_Owner_By_Key"] = createExportWrapper("GS_Show_Owner_By_Key");
-
-var _GS_Open_Segment = Module["_GS_Open_Segment"] = createExportWrapper("GS_Open_Segment");
-
-var _GS_Open_Segment_By_Key = Module["_GS_Open_Segment_By_Key"] = createExportWrapper("GS_Open_Segment_By_Key");
-
-var _GS_Close_Segment = Module["_GS_Close_Segment"] = createExportWrapper("GS_Close_Segment");
-
-var _GS_Delete_Segment = Module["_GS_Delete_Segment"] = createExportWrapper("GS_Delete_Segment");
-
-var _GS_Clear_Attributes = Module["_GS_Clear_Attributes"] = createExportWrapper("GS_Clear_Attributes");
-
-var _GS_Clear_Attributes_By_Key = Module["_GS_Clear_Attributes_By_Key"] = createExportWrapper("GS_Clear_Attributes_By_Key");
-
-var _GS_Clear_Includes = Module["_GS_Clear_Includes"] = createExportWrapper("GS_Clear_Includes");
-
-var _GS_Clear_Includes_By_Key = Module["_GS_Clear_Includes_By_Key"] = createExportWrapper("GS_Clear_Includes_By_Key");
-
-var _GS_Clear_Styles = Module["_GS_Clear_Styles"] = createExportWrapper("GS_Clear_Styles");
-
-var _GS_Clear_Styles_By_Key = Module["_GS_Clear_Styles_By_Key"] = createExportWrapper("GS_Clear_Styles_By_Key");
-
-var _GS_Clear_Subsegments = Module["_GS_Clear_Subsegments"] = createExportWrapper("GS_Clear_Subsegments");
-
-var _GS_Clear_Subsegments_By_Key = Module["_GS_Clear_Subsegments_By_Key"] = createExportWrapper("GS_Clear_Subsegments_By_Key");
-
-var _GS_Clear_Data = Module["_GS_Clear_Data"] = createExportWrapper("GS_Clear_Data");
-
-var _GS_Clear_Data_By_Key = Module["_GS_Clear_Data_By_Key"] = createExportWrapper("GS_Clear_Data_By_Key");
-
-var _GS_Clear_All = Module["_GS_Clear_All"] = createExportWrapper("GS_Clear_All");
-
-var _GS_Clear_All_By_Key = Module["_GS_Clear_All_By_Key"] = createExportWrapper("GS_Clear_All_By_Key");
-
-var _GS_Delete_By_Key = Module["_GS_Delete_By_Key"] = createExportWrapper("GS_Delete_By_Key");
-
-var _GS_Clear_Geometry = Module["_GS_Clear_Geometry"] = createExportWrapper("GS_Clear_Geometry");
-
-var _GS_Clear_Geometry_By_Key = Module["_GS_Clear_Geometry_By_Key"] = createExportWrapper("GS_Clear_Geometry_By_Key");
-
-var _GS_Include_Segment_By_Key = Module["_GS_Include_Segment_By_Key"] = createExportWrapper("GS_Include_Segment_By_Key");
-
-var _GS_Conditional_Include_By_Key = Module["_GS_Conditional_Include_By_Key"] = createExportWrapper("GS_Conditional_Include_By_Key");
-
-var _GS_Style_Segment_By_Key = Module["_GS_Style_Segment_By_Key"] = createExportWrapper("GS_Style_Segment_By_Key");
-
-var _GS_Conditional_Style_By_Key = Module["_GS_Conditional_Style_By_Key"] = createExportWrapper("GS_Conditional_Style_By_Key");
-
-var _GS_Show_Subsegment_Count = Module["_GS_Show_Subsegment_Count"] = createExportWrapper("GS_Show_Subsegment_Count");
-
-var _GS_Show_Subsegment = Module["_GS_Show_Subsegment"] = createExportWrapper("GS_Show_Subsegment");
-
-var _GS_Show_All_Subsegment_Count = Module["_GS_Show_All_Subsegment_Count"] = createExportWrapper("GS_Show_All_Subsegment_Count");
-
-var _GS_Show_Subsegment_List = Module["_GS_Show_Subsegment_List"] = createExportWrapper("GS_Show_Subsegment_List");
-
-var _GS_Show_All_Subsegment_List = Module["_GS_Show_All_Subsegment_List"] = createExportWrapper("GS_Show_All_Subsegment_List");
-
-var _GS_Show_Segment_Name = Module["_GS_Show_Segment_Name"] = createExportWrapper("GS_Show_Segment_Name");
-
-var _GS_Show_Segment_Path = Module["_GS_Show_Segment_Path"] = createExportWrapper("GS_Show_Segment_Path");
-
-var _GS_Show_Attribute_Count = Module["_GS_Show_Attribute_Count"] = createExportWrapper("GS_Show_Attribute_Count");
-
-var _GS_Show_Attribute_List = Module["_GS_Show_Attribute_List"] = createExportWrapper("GS_Show_Attribute_List");
-
-var _GS_Show_Attrubute = Module["_GS_Show_Attrubute"] = createExportWrapper("GS_Show_Attrubute");
-
-var _GS_Show_Geometry_Count = Module["_GS_Show_Geometry_Count"] = createExportWrapper("GS_Show_Geometry_Count");
-
-var _GS_Show_Geometry_List = Module["_GS_Show_Geometry_List"] = createExportWrapper("GS_Show_Geometry_List");
-
-var _GS_Show_Geometry = Module["_GS_Show_Geometry"] = createExportWrapper("GS_Show_Geometry");
-
-var _GS_Show_Include_Count = Module["_GS_Show_Include_Count"] = createExportWrapper("GS_Show_Include_Count");
-
-var _GS_Show_Include_List = Module["_GS_Show_Include_List"] = createExportWrapper("GS_Show_Include_List");
-
-var _GS_Show_Include = Module["_GS_Show_Include"] = createExportWrapper("GS_Show_Include");
-
-var _GS_Show_Include_Segment = Module["_GS_Show_Include_Segment"] = createExportWrapper("GS_Show_Include_Segment");
-
-var _GS_Show_Included_Count = Module["_GS_Show_Included_Count"] = createExportWrapper("GS_Show_Included_Count");
-
-var _GS_Show_Included_List = Module["_GS_Show_Included_List"] = createExportWrapper("GS_Show_Included_List");
-
-var _GS_Show_Style_Count = Module["_GS_Show_Style_Count"] = createExportWrapper("GS_Show_Style_Count");
-
-var _GS_Show_Style_List = Module["_GS_Show_Style_List"] = createExportWrapper("GS_Show_Style_List");
-
-var _GS_Show_Style = Module["_GS_Show_Style"] = createExportWrapper("GS_Show_Style");
-
-var _GS_Show_Style_Segment = Module["_GS_Show_Style_Segment"] = createExportWrapper("GS_Show_Style_Segment");
-
-var _GS_Show_Styled_Count = Module["_GS_Show_Styled_Count"] = createExportWrapper("GS_Show_Styled_Count");
-
-var _GS_Show_Styled_List = Module["_GS_Show_Styled_List"] = createExportWrapper("GS_Show_Styled_List");
-
-var _GS_Segment_Exists = Module["_GS_Segment_Exists"] = createExportWrapper("GS_Segment_Exists");
-
-var _GS_Rename_Segment = Module["_GS_Rename_Segment"] = createExportWrapper("GS_Rename_Segment");
-
-var _GS_Rename_Segment_By_Key = Module["_GS_Rename_Segment_By_Key"] = createExportWrapper("GS_Rename_Segment_By_Key");
-
-var _GS_Move_Key = Module["_GS_Move_Key"] = createExportWrapper("GS_Move_Key");
-
-var _GS_Move_Key_By_Key = Module["_GS_Move_Key_By_Key"] = createExportWrapper("GS_Move_Key_By_Key");
-
-var _GS_Set_Key_Index = Module["_GS_Set_Key_Index"] = createExportWrapper("GS_Set_Key_Index");
-
-var _GS_Show_Key_Index = Module["_GS_Show_Key_Index"] = createExportWrapper("GS_Show_Key_Index");
-
-var _GS_Add_Property_Boolean = Module["_GS_Add_Property_Boolean"] = createExportWrapper("GS_Add_Property_Boolean");
-
-var _GS_Add_Property_Integer = Module["_GS_Add_Property_Integer"] = createExportWrapper("GS_Add_Property_Integer");
-
-var _GS_Add_Property_Double = Module["_GS_Add_Property_Double"] = createExportWrapper("GS_Add_Property_Double");
-
-var _GS_Add_Property_Double_By_Pointer = Module["_GS_Add_Property_Double_By_Pointer"] = createExportWrapper("GS_Add_Property_Double_By_Pointer");
-
-var _GS_Add_Property_String = Module["_GS_Add_Property_String"] = createExportWrapper("GS_Add_Property_String");
-
-var _GS_Add_Property_Json = Module["_GS_Add_Property_Json"] = createExportWrapper("GS_Add_Property_Json");
-
-var _GS_Show_Property_Type = Module["_GS_Show_Property_Type"] = createExportWrapper("GS_Show_Property_Type");
-
-var _GS_Show_Property_Boolean = Module["_GS_Show_Property_Boolean"] = createExportWrapper("GS_Show_Property_Boolean");
-
-var _GS_Show_Property_Integer = Module["_GS_Show_Property_Integer"] = createExportWrapper("GS_Show_Property_Integer");
-
-var _GS_Show_Property_Double = Module["_GS_Show_Property_Double"] = createExportWrapper("GS_Show_Property_Double");
-
-var _GS_Show_Property_String_Length = Module["_GS_Show_Property_String_Length"] = createExportWrapper("GS_Show_Property_String_Length");
-
-var _GS_Show_Property_String = Module["_GS_Show_Property_String"] = createExportWrapper("GS_Show_Property_String");
-
-var _GS_Property_Exists = Module["_GS_Property_Exists"] = createExportWrapper("GS_Property_Exists");
-
-var _GS_Remove_Property = Module["_GS_Remove_Property"] = createExportWrapper("GS_Remove_Property");
-
-var _GS_Remove_Property_By_Index = Module["_GS_Remove_Property_By_Index"] = createExportWrapper("GS_Remove_Property_By_Index");
-
-var _GS_Clear_Properties = Module["_GS_Clear_Properties"] = createExportWrapper("GS_Clear_Properties");
-
-var _GS_Show_Property_Count = Module["_GS_Show_Property_Count"] = createExportWrapper("GS_Show_Property_Count");
-
-var _GS_Show_Property_Type_By_Index = Module["_GS_Show_Property_Type_By_Index"] = createExportWrapper("GS_Show_Property_Type_By_Index");
-
-var _GS_Show_Property_Length_By_Index = Module["_GS_Show_Property_Length_By_Index"] = createExportWrapper("GS_Show_Property_Length_By_Index");
-
-var _GS_Show_Property_By_Index = Module["_GS_Show_Property_By_Index"] = createExportWrapper("GS_Show_Property_By_Index");
-
-var _GS_Show_Key_By_Id = Module["_GS_Show_Key_By_Id"] = createExportWrapper("GS_Show_Key_By_Id");
-
-var _GS_Show_Key_By_Name = Module["_GS_Show_Key_By_Name"] = createExportWrapper("GS_Show_Key_By_Name");
-
-var _GS_Open_Geometry = Module["_GS_Open_Geometry"] = createExportWrapper("GS_Open_Geometry");
-
-var _GS_Close_Geometry = Module["_GS_Close_Geometry"] = createExportWrapper("GS_Close_Geometry");
-
-var _GS_Compute_Path = Module["_GS_Compute_Path"] = createExportWrapper("GS_Compute_Path");
-
-var _GS_Compute_Coordinates_By_Key = Module["_GS_Compute_Coordinates_By_Key"] = createExportWrapper("GS_Compute_Coordinates_By_Key");
-
-var _GS_Compute_Coordinates_By_Path = Module["_GS_Compute_Coordinates_By_Path"] = createExportWrapper("GS_Compute_Coordinates_By_Path");
-
-var _GS_DCompute_Coordinates_By_Key = Module["_GS_DCompute_Coordinates_By_Key"] = createExportWrapper("GS_DCompute_Coordinates_By_Key");
-
-var _GS_Compute_Boundingbox_By_Key = Module["_GS_Compute_Boundingbox_By_Key"] = createExportWrapper("GS_Compute_Boundingbox_By_Key");
-
-var _GS_Compute_Boundingbox_With_Visibility_By_Key = Module["_GS_Compute_Boundingbox_With_Visibility_By_Key"] = createExportWrapper("GS_Compute_Boundingbox_With_Visibility_By_Key");
-
-var _GS_Compute_View_Boundingbox_By_Key = Module["_GS_Compute_View_Boundingbox_By_Key"] = createExportWrapper("GS_Compute_View_Boundingbox_By_Key");
-
-var _GS_Compute_View_Boundingbox_By_Keys = Module["_GS_Compute_View_Boundingbox_By_Keys"] = createExportWrapper("GS_Compute_View_Boundingbox_By_Keys");
-
-var _GS_Compute_Geometry_Boundingbox_By_Key = Module["_GS_Compute_Geometry_Boundingbox_By_Key"] = createExportWrapper("GS_Compute_Geometry_Boundingbox_By_Key");
-
-var _GS_Compute_Segment_Boundingbox_By_Key = Module["_GS_Compute_Segment_Boundingbox_By_Key"] = createExportWrapper("GS_Compute_Segment_Boundingbox_By_Key");
-
-var _GS_Clear_Segment_Boundingbox_By_Key = Module["_GS_Clear_Segment_Boundingbox_By_Key"] = createExportWrapper("GS_Clear_Segment_Boundingbox_By_Key");
-
-var _GS_Show_BoundingBox_By_Key = Module["_GS_Show_BoundingBox_By_Key"] = createExportWrapper("GS_Show_BoundingBox_By_Key");
-
-var _GS_Compute_Selection_By_Key = Module["_GS_Compute_Selection_By_Key"] = createExportWrapper("GS_Compute_Selection_By_Key");
-
-var _GS_Compute_Selection_By_Area = Module["_GS_Compute_Selection_By_Area"] = createExportWrapper("GS_Compute_Selection_By_Area");
-
-var _GS_Compute_Collision_By_Keys = Module["_GS_Compute_Collision_By_Keys"] = createExportWrapper("GS_Compute_Collision_By_Keys");
-
-var _GS_Compute_Collision_By_Key = Module["_GS_Compute_Collision_By_Key"] = createExportWrapper("GS_Compute_Collision_By_Key");
-
-var _GS_Show_Selection_Count = Module["_GS_Show_Selection_Count"] = createExportWrapper("GS_Show_Selection_Count");
-
-var _GS_Show_Selection_Element = Module["_GS_Show_Selection_Element"] = createExportWrapper("GS_Show_Selection_Element");
-
-var _GS_Show_Selection_Path = Module["_GS_Show_Selection_Path"] = createExportWrapper("GS_Show_Selection_Path");
-
-var _GS_Show_Selection_Path_By_Keys = Module["_GS_Show_Selection_Path_By_Keys"] = createExportWrapper("GS_Show_Selection_Path_By_Keys");
-
-var _GS_Show_Selection_Position = Module["_GS_Show_Selection_Position"] = createExportWrapper("GS_Show_Selection_Position");
-
-var _GS_Show_Selection_Position_By_Value = Module["_GS_Show_Selection_Position_By_Value"] = createExportWrapper("GS_Show_Selection_Position_By_Value");
-
-var _GS_Show_Selection_Param = Module["_GS_Show_Selection_Param"] = createExportWrapper("GS_Show_Selection_Param");
-
-var _GS_Show_Selection_Indexes = Module["_GS_Show_Selection_Indexes"] = createExportWrapper("GS_Show_Selection_Indexes");
-
-var _GS_Show_Selection_Test_Info = Module["_GS_Show_Selection_Test_Info"] = createExportWrapper("GS_Show_Selection_Test_Info");
-
-var _GS_Show_Collision_Count = Module["_GS_Show_Collision_Count"] = createExportWrapper("GS_Show_Collision_Count");
-
-var _GS_Show_Collision_Elements = Module["_GS_Show_Collision_Elements"] = createExportWrapper("GS_Show_Collision_Elements");
-
-var _GS_Show_Collision_Paths = Module["_GS_Show_Collision_Paths"] = createExportWrapper("GS_Show_Collision_Paths");
-
-var _GS_Show_Collision_Path_By_Keys = Module["_GS_Show_Collision_Path_By_Keys"] = createExportWrapper("GS_Show_Collision_Path_By_Keys");
-
-var _GS_Show_Collision_Position = Module["_GS_Show_Collision_Position"] = createExportWrapper("GS_Show_Collision_Position");
-
-var _GS_Show_Collision_Type = Module["_GS_Show_Collision_Type"] = createExportWrapper("GS_Show_Collision_Type");
-
-var _GS_Compute_Visible_By_Key = Module["_GS_Compute_Visible_By_Key"] = createExportWrapper("GS_Compute_Visible_By_Key");
-
-var _GS_Compute_Ray_Test = Module["_GS_Compute_Ray_Test"] = createExportWrapper("GS_Compute_Ray_Test");
-
-var _GS_Compute_Box_Test = Module["_GS_Compute_Box_Test"] = createExportWrapper("GS_Compute_Box_Test");
-
-var _GS_Compute_Geometry_Distance = Module["_GS_Compute_Geometry_Distance"] = createExportWrapper("GS_Compute_Geometry_Distance");
-
-var _GS_Init_Multithreading_Services = Module["_GS_Init_Multithreading_Services"] = createExportWrapper("GS_Init_Multithreading_Services");
-
-var _GS_Fina_Multithreading_Services = Module["_GS_Fina_Multithreading_Services"] = createExportWrapper("GS_Fina_Multithreading_Services");
-
-var _GS_Asyn_Update_View_By_Key_Tt = Module["_GS_Asyn_Update_View_By_Key_Tt"] = createExportWrapper("GS_Asyn_Update_View_By_Key_Tt");
-
-var _GS_Asyn_Update_Geometry_Data_By_Key_Tt = Module["_GS_Asyn_Update_Geometry_Data_By_Key_Tt"] = createExportWrapper("GS_Asyn_Update_Geometry_Data_By_Key_Tt");
-
-var _GS_Asyn_Update_Partial_Geometry_Data_By_Key_Tt = Module["_GS_Asyn_Update_Partial_Geometry_Data_By_Key_Tt"] = createExportWrapper("GS_Asyn_Update_Partial_Geometry_Data_By_Key_Tt");
-
-var _GS_Stream_To_Segment_By_Key_Tt = Module["_GS_Stream_To_Segment_By_Key_Tt"] = createExportWrapper("GS_Stream_To_Segment_By_Key_Tt");
-
-var _GS_Compute_Collision_By_Keys_Tt = Module["_GS_Compute_Collision_By_Keys_Tt"] = createExportWrapper("GS_Compute_Collision_By_Keys_Tt");
-
-var _GS_Compute_Collision_By_Key_Tt = Module["_GS_Compute_Collision_By_Key_Tt"] = createExportWrapper("GS_Compute_Collision_By_Key_Tt");
-
-var _GS_Boolean_Intersection_Graph = Module["_GS_Boolean_Intersection_Graph"] = createExportWrapper("GS_Boolean_Intersection_Graph");
-
-var _GS_Boolean_Intersect_Polyline_Polygon_Xy = Module["_GS_Boolean_Intersect_Polyline_Polygon_Xy"] = createExportWrapper("GS_Boolean_Intersect_Polyline_Polygon_Xy");
-
-var _GS_Boolean_Intersect_Polygon_Polygon_Xy = Module["_GS_Boolean_Intersect_Polygon_Polygon_Xy"] = createExportWrapper("GS_Boolean_Intersect_Polygon_Polygon_Xy");
-
-var _GS_Boolean_Intersect_Graph_Polygon_Xy = Module["_GS_Boolean_Intersect_Graph_Polygon_Xy"] = createExportWrapper("GS_Boolean_Intersect_Graph_Polygon_Xy");
-
-var _GS_Boolean_Subtract_Polygon_Polygon_Xy = Module["_GS_Boolean_Subtract_Polygon_Polygon_Xy"] = createExportWrapper("GS_Boolean_Subtract_Polygon_Polygon_Xy");
-
-var _GS_Boolean_Cut_Polygon_Polygon_Xy = Module["_GS_Boolean_Cut_Polygon_Polygon_Xy"] = createExportWrapper("GS_Boolean_Cut_Polygon_Polygon_Xy");
-
-var _GS_Point_QuickSort = Module["_GS_Point_QuickSort"] = createExportWrapper("GS_Point_QuickSort");
-
-var _GS_Triangulate_Polygon = Module["_GS_Triangulate_Polygon"] = createExportWrapper("GS_Triangulate_Polygon");
-
-var _GS_DTriangulate_Polygon = Module["_GS_DTriangulate_Polygon"] = createExportWrapper("GS_DTriangulate_Polygon");
-
-var _GS_Compute_Subdivide_Curve_Count = Module["_GS_Compute_Subdivide_Curve_Count"] = createExportWrapper("GS_Compute_Subdivide_Curve_Count");
-
-var _GS_Subdivide_Curve = Module["_GS_Subdivide_Curve"] = createExportWrapper("GS_Subdivide_Curve");
-
-var _Matrix_Det = Module["_Matrix_Det"] = createExportWrapper("Matrix_Det");
-
-var _GS_FLT_Vector_Normalize = Module["_GS_FLT_Vector_Normalize"] = createExportWrapper("GS_FLT_Vector_Normalize");
-
-var _GS_FLT_Vector_Cross = Module["_GS_FLT_Vector_Cross"] = createExportWrapper("GS_FLT_Vector_Cross");
-
-var _GS_FLT_Matrix_Multiply = Module["_GS_FLT_Matrix_Multiply"] = createExportWrapper("GS_FLT_Matrix_Multiply");
-
-var _GS_FLT_Matrix_Clone = Module["_GS_FLT_Matrix_Clone"] = createExportWrapper("GS_FLT_Matrix_Clone");
-
-var _GS_FLT_Matrix_Inverse = Module["_GS_FLT_Matrix_Inverse"] = createExportWrapper("GS_FLT_Matrix_Inverse");
-
-var _GS_Vector_Normalize = Module["_GS_Vector_Normalize"] = createExportWrapper("GS_Vector_Normalize");
-
-var _GS_Vector_Cross = Module["_GS_Vector_Cross"] = createExportWrapper("GS_Vector_Cross");
-
-var _GS_Matrix_Multiply = Module["_GS_Matrix_Multiply"] = createExportWrapper("GS_Matrix_Multiply");
-
-var _GS_Matrix_Clone = Module["_GS_Matrix_Clone"] = createExportWrapper("GS_Matrix_Clone");
-
-var _GS_Matrix_Inverse = Module["_GS_Matrix_Inverse"] = createExportWrapper("GS_Matrix_Inverse");
-
-var _GS_FLT_Point_Add = Module["_GS_FLT_Point_Add"] = createExportWrapper("GS_FLT_Point_Add");
-
-var _GS_FLT_Point_Subtract = Module["_GS_FLT_Point_Subtract"] = createExportWrapper("GS_FLT_Point_Subtract");
-
-var _GS_FLT_Point_Is_Same = Module["_GS_FLT_Point_Is_Same"] = createExportWrapper("GS_FLT_Point_Is_Same");
-
-var _GS_FLT_Vector_Module = Module["_GS_FLT_Vector_Module"] = createExportWrapper("GS_FLT_Vector_Module");
-
-var _GS_FLT_Vector_Is_Zero = Module["_GS_FLT_Vector_Is_Zero"] = createExportWrapper("GS_FLT_Vector_Is_Zero");
-
-var _GS_FLT_Vector_Include_Angle = Module["_GS_FLT_Vector_Include_Angle"] = createExportWrapper("GS_FLT_Vector_Include_Angle");
-
-var _GS_FLT_Vector_Angle = Module["_GS_FLT_Vector_Angle"] = createExportWrapper("GS_FLT_Vector_Angle");
-
-var _GS_FLT_Vector_Dot = Module["_GS_FLT_Vector_Dot"] = createExportWrapper("GS_FLT_Vector_Dot");
-
-var _GS_FLT_Vector_Angle_With_Normal = Module["_GS_FLT_Vector_Angle_With_Normal"] = createExportWrapper("GS_FLT_Vector_Angle_With_Normal");
-
-var _GS_FLT_Vector_Is_Parallel = Module["_GS_FLT_Vector_Is_Parallel"] = createExportWrapper("GS_FLT_Vector_Is_Parallel");
-
-var _GS_FLT_Vector_Reverse = Module["_GS_FLT_Vector_Reverse"] = createExportWrapper("GS_FLT_Vector_Reverse");
-
-var _GS_FLT_Vector_Divide = Module["_GS_FLT_Vector_Divide"] = createExportWrapper("GS_FLT_Vector_Divide");
-
-var _GS_FLT_Vector_Is_Perpendicular = Module["_GS_FLT_Vector_Is_Perpendicular"] = createExportWrapper("GS_FLT_Vector_Is_Perpendicular");
-
-var _GS_FLT_Distance_Point = Module["_GS_FLT_Distance_Point"] = createExportWrapper("GS_FLT_Distance_Point");
-
-var _GS_FLT_Distance_Point_Point = Module["_GS_FLT_Distance_Point_Point"] = createExportWrapper("GS_FLT_Distance_Point_Point");
-
-var _GS_FLT_Project_Point_To_Line = Module["_GS_FLT_Project_Point_To_Line"] = createExportWrapper("GS_FLT_Project_Point_To_Line");
-
-var _GS_FLT_Closest_Point = Module["_GS_FLT_Closest_Point"] = createExportWrapper("GS_FLT_Closest_Point");
-
-var _GS_FLT_Distance_Line_Line_With_Points = Module["_GS_FLT_Distance_Line_Line_With_Points"] = createExportWrapper("GS_FLT_Distance_Line_Line_With_Points");
-
-var _GS_FLT_Project_Point_to_Triangle = Module["_GS_FLT_Project_Point_to_Triangle"] = createExportWrapper("GS_FLT_Project_Point_to_Triangle");
-
-var _GS_FLT_Is_Point_In_LineSegment = Module["_GS_FLT_Is_Point_In_LineSegment"] = createExportWrapper("GS_FLT_Is_Point_In_LineSegment");
-
-var _GS_FLT_Matrix_Multiply_Point = Module["_GS_FLT_Matrix_Multiply_Point"] = createExportWrapper("GS_FLT_Matrix_Multiply_Point");
-
-var _GS_FLT_Matrix_Multiply_WPoint = Module["_GS_FLT_Matrix_Multiply_WPoint"] = createExportWrapper("GS_FLT_Matrix_Multiply_WPoint");
-
-var _GS_Point_Add = Module["_GS_Point_Add"] = createExportWrapper("GS_Point_Add");
-
-var _GS_Point_Subtract = Module["_GS_Point_Subtract"] = createExportWrapper("GS_Point_Subtract");
-
-var _GS_Point_Subtract_By_Index = Module["_GS_Point_Subtract_By_Index"] = createExportWrapper("GS_Point_Subtract_By_Index");
-
-var _GS_Vector_Module = Module["_GS_Vector_Module"] = createExportWrapper("GS_Vector_Module");
-
-var _GS_Vector_Is_Zero = Module["_GS_Vector_Is_Zero"] = createExportWrapper("GS_Vector_Is_Zero");
-
-var _GS_Vector_Multiply = Module["_GS_Vector_Multiply"] = createExportWrapper("GS_Vector_Multiply");
-
-var _GS_Vector_Dot = Module["_GS_Vector_Dot"] = createExportWrapper("GS_Vector_Dot");
-
-var _GS_Vector_Divide = Module["_GS_Vector_Divide"] = createExportWrapper("GS_Vector_Divide");
-
-var _GS_Vector_Include_Angle = Module["_GS_Vector_Include_Angle"] = createExportWrapper("GS_Vector_Include_Angle");
-
-var _GS_Vector_Angle = Module["_GS_Vector_Angle"] = createExportWrapper("GS_Vector_Angle");
-
-var _GS_Vector_Angle_With_Normal = Module["_GS_Vector_Angle_With_Normal"] = createExportWrapper("GS_Vector_Angle_With_Normal");
-
-var _GS_Vector_Is_Parallel = Module["_GS_Vector_Is_Parallel"] = createExportWrapper("GS_Vector_Is_Parallel");
-
-var _GS_Vector_Reverse = Module["_GS_Vector_Reverse"] = createExportWrapper("GS_Vector_Reverse");
-
-var _GS_Point_Is_Same = Module["_GS_Point_Is_Same"] = createExportWrapper("GS_Point_Is_Same");
-
-var _GS_Point_Is_Same_By_Index = Module["_GS_Point_Is_Same_By_Index"] = createExportWrapper("GS_Point_Is_Same_By_Index");
-
-var _GS_Vector_Is_Same = Module["_GS_Vector_Is_Same"] = createExportWrapper("GS_Vector_Is_Same");
-
-var _GS_Vector_Is_Perpendicular = Module["_GS_Vector_Is_Perpendicular"] = createExportWrapper("GS_Vector_Is_Perpendicular");
-
-var _GS_Closest_Point = Module["_GS_Closest_Point"] = createExportWrapper("GS_Closest_Point");
-
-var _GS_Distance_Point = Module["_GS_Distance_Point"] = createExportWrapper("GS_Distance_Point");
-
-var _GS_Distance_Point_Point = Module["_GS_Distance_Point_Point"] = createExportWrapper("GS_Distance_Point_Point");
-
-var _GS_Project_Point_To_Line = Module["_GS_Project_Point_To_Line"] = createExportWrapper("GS_Project_Point_To_Line");
-
-var _GS_Project_Point_To_LineSegment = Module["_GS_Project_Point_To_LineSegment"] = createExportWrapper("GS_Project_Point_To_LineSegment");
-
-var _GS_Project_Point_To_Plane = Module["_GS_Project_Point_To_Plane"] = createExportWrapper("GS_Project_Point_To_Plane");
-
-var _GS_Is_Point_In_Plane = Module["_GS_Is_Point_In_Plane"] = createExportWrapper("GS_Is_Point_In_Plane");
-
-var _GS_Is_Point_In_Line_Segment = Module["_GS_Is_Point_In_Line_Segment"] = createExportWrapper("GS_Is_Point_In_Line_Segment");
-
-var _GS_Intersection_Line_LineSegment = Module["_GS_Intersection_Line_LineSegment"] = createExportWrapper("GS_Intersection_Line_LineSegment");
-
-var _GS_Intersection_LineSegment_LineSegment = Module["_GS_Intersection_LineSegment_LineSegment"] = createExportWrapper("GS_Intersection_LineSegment_LineSegment");
-
-var _GS_Intersection_Line_Plane = Module["_GS_Intersection_Line_Plane"] = createExportWrapper("GS_Intersection_Line_Plane");
-
-var _GS_Intersection_Line_Triangle = Module["_GS_Intersection_Line_Triangle"] = createExportWrapper("GS_Intersection_Line_Triangle");
-
-var _GS_Intersection_Plane_Triangle = Module["_GS_Intersection_Plane_Triangle"] = createExportWrapper("GS_Intersection_Plane_Triangle");
-
-var _GS_Intersection_Triangle_Triangle = Module["_GS_Intersection_Triangle_Triangle"] = createExportWrapper("GS_Intersection_Triangle_Triangle");
-
-var _GS_Is_Point_On_Polygon_Xy = Module["_GS_Is_Point_On_Polygon_Xy"] = createExportWrapper("GS_Is_Point_On_Polygon_Xy");
-
-var _GS_Is_Point_In_Polygon_Xy = Module["_GS_Is_Point_In_Polygon_Xy"] = createExportWrapper("GS_Is_Point_In_Polygon_Xy");
-
-var _GS_Matrix_Multiply_Point = Module["_GS_Matrix_Multiply_Point"] = createExportWrapper("GS_Matrix_Multiply_Point");
-
-var __emscripten_tls_init = Module["__emscripten_tls_init"] = createExportWrapper("_emscripten_tls_init");
-
-var _pthread_self = Module["_pthread_self"] = createExportWrapper("pthread_self");
-
-var ___errno_location = Module["___errno_location"] = createExportWrapper("__errno_location");
-
-var __emscripten_thread_init = Module["__emscripten_thread_init"] = createExportWrapper("_emscripten_thread_init");
-
-var __emscripten_thread_crashed = Module["__emscripten_thread_crashed"] = createExportWrapper("_emscripten_thread_crashed");
-
-var _fflush = Module["_fflush"] = createExportWrapper("fflush");
-
-var _emscripten_main_browser_thread_id = Module["_emscripten_main_browser_thread_id"] = createExportWrapper("emscripten_main_browser_thread_id");
-
-var _emscripten_main_thread_process_queued_calls = Module["_emscripten_main_thread_process_queued_calls"] = createExportWrapper("emscripten_main_thread_process_queued_calls");
-
-var _emscripten_run_in_main_runtime_thread_js = Module["_emscripten_run_in_main_runtime_thread_js"] = createExportWrapper("emscripten_run_in_main_runtime_thread_js");
-
-var _emscripten_dispatch_to_thread_ = Module["_emscripten_dispatch_to_thread_"] = createExportWrapper("emscripten_dispatch_to_thread_");
-
-var __emscripten_proxy_execute_task_queue = Module["__emscripten_proxy_execute_task_queue"] = createExportWrapper("_emscripten_proxy_execute_task_queue");
-
-var __emscripten_thread_free_data = Module["__emscripten_thread_free_data"] = createExportWrapper("_emscripten_thread_free_data");
-
-var __emscripten_thread_exit = Module["__emscripten_thread_exit"] = createExportWrapper("_emscripten_thread_exit");
-
-var _malloc = Module["_malloc"] = createExportWrapper("malloc");
-
-var _free = Module["_free"] = createExportWrapper("free");
-
-var _emscripten_stack_get_base = Module["_emscripten_stack_get_base"] = function() {
- return (_emscripten_stack_get_base = Module["_emscripten_stack_get_base"] = Module["asm"]["emscripten_stack_get_base"]).apply(null, arguments);
+var ___wasm_call_ctors = Module["___wasm_call_ctors"] = function() {
+ return (___wasm_call_ctors = Module["___wasm_call_ctors"] = Module["asm"]["cb"]).apply(null, arguments);
 };
 
-var _emscripten_stack_get_end = Module["_emscripten_stack_get_end"] = function() {
- return (_emscripten_stack_get_end = Module["_emscripten_stack_get_end"] = Module["asm"]["emscripten_stack_get_end"]).apply(null, arguments);
+var _GS_Add_Font_Library = Module["_GS_Add_Font_Library"] = function() {
+ return (_GS_Add_Font_Library = Module["_GS_Add_Font_Library"] = Module["asm"]["eb"]).apply(null, arguments);
 };
 
-var _setThrew = Module["_setThrew"] = createExportWrapper("setThrew");
+var _GS_Set_Driver_Configs = Module["_GS_Set_Driver_Configs"] = function() {
+ return (_GS_Set_Driver_Configs = Module["_GS_Set_Driver_Configs"] = Module["asm"]["fb"]).apply(null, arguments);
+};
 
-var _saveSetjmp = Module["_saveSetjmp"] = createExportWrapper("saveSetjmp");
+var _GS_Set_Driver_Options = Module["_GS_Set_Driver_Options"] = function() {
+ return (_GS_Set_Driver_Options = Module["_GS_Set_Driver_Options"] = Module["asm"]["gb"]).apply(null, arguments);
+};
 
-var _emscripten_stack_init = Module["_emscripten_stack_init"] = function() {
- return (_emscripten_stack_init = Module["_emscripten_stack_init"] = Module["asm"]["emscripten_stack_init"]).apply(null, arguments);
+var _GS_Show_Driver_Options = Module["_GS_Show_Driver_Options"] = function() {
+ return (_GS_Show_Driver_Options = Module["_GS_Show_Driver_Options"] = Module["asm"]["hb"]).apply(null, arguments);
+};
+
+var _GS_Show_One_Driver_Option = Module["_GS_Show_One_Driver_Option"] = function() {
+ return (_GS_Show_One_Driver_Option = Module["_GS_Show_One_Driver_Option"] = Module["asm"]["ib"]).apply(null, arguments);
+};
+
+var _GS_Set_Shader = Module["_GS_Set_Shader"] = function() {
+ return (_GS_Set_Shader = Module["_GS_Set_Shader"] = Module["asm"]["jb"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Shader = Module["_GS_UnSet_Shader"] = function() {
+ return (_GS_UnSet_Shader = Module["_GS_UnSet_Shader"] = Module["asm"]["kb"]).apply(null, arguments);
+};
+
+var _GS_Show_Shader = Module["_GS_Show_Shader"] = function() {
+ return (_GS_Show_Shader = Module["_GS_Show_Shader"] = Module["asm"]["lb"]).apply(null, arguments);
+};
+
+var _GS_Show_One_Shader = Module["_GS_Show_One_Shader"] = function() {
+ return (_GS_Show_One_Shader = Module["_GS_Show_One_Shader"] = Module["asm"]["mb"]).apply(null, arguments);
+};
+
+var _GS_Set_Viewport = Module["_GS_Set_Viewport"] = function() {
+ return (_GS_Set_Viewport = Module["_GS_Set_Viewport"] = Module["asm"]["nb"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Viewport = Module["_GS_UnSet_Viewport"] = function() {
+ return (_GS_UnSet_Viewport = Module["_GS_UnSet_Viewport"] = Module["asm"]["ob"]).apply(null, arguments);
+};
+
+var _GS_Show_Viewport = Module["_GS_Show_Viewport"] = function() {
+ return (_GS_Show_Viewport = Module["_GS_Show_Viewport"] = Module["asm"]["pb"]).apply(null, arguments);
+};
+
+var _GS_Set_Camera = Module["_GS_Set_Camera"] = function() {
+ return (_GS_Set_Camera = Module["_GS_Set_Camera"] = Module["asm"]["qb"]).apply(null, arguments);
+};
+
+var _GS_Set_Camera_Position = Module["_GS_Set_Camera_Position"] = function() {
+ return (_GS_Set_Camera_Position = Module["_GS_Set_Camera_Position"] = Module["asm"]["rb"]).apply(null, arguments);
+};
+
+var _GS_Set_Camera_Target = Module["_GS_Set_Camera_Target"] = function() {
+ return (_GS_Set_Camera_Target = Module["_GS_Set_Camera_Target"] = Module["asm"]["sb"]).apply(null, arguments);
+};
+
+var _GS_Set_Camera_Up = Module["_GS_Set_Camera_Up"] = function() {
+ return (_GS_Set_Camera_Up = Module["_GS_Set_Camera_Up"] = Module["asm"]["tb"]).apply(null, arguments);
+};
+
+var _GS_Set_Camera_Field = Module["_GS_Set_Camera_Field"] = function() {
+ return (_GS_Set_Camera_Field = Module["_GS_Set_Camera_Field"] = Module["asm"]["ub"]).apply(null, arguments);
+};
+
+var _GS_Set_Camera_Extent = Module["_GS_Set_Camera_Extent"] = function() {
+ return (_GS_Set_Camera_Extent = Module["_GS_Set_Camera_Extent"] = Module["asm"]["vb"]).apply(null, arguments);
+};
+
+var _GS_Set_Camera_Projection = Module["_GS_Set_Camera_Projection"] = function() {
+ return (_GS_Set_Camera_Projection = Module["_GS_Set_Camera_Projection"] = Module["asm"]["wb"]).apply(null, arguments);
+};
+
+var _GS_Keep_Camera_Ratio = Module["_GS_Keep_Camera_Ratio"] = function() {
+ return (_GS_Keep_Camera_Ratio = Module["_GS_Keep_Camera_Ratio"] = Module["asm"]["xb"]).apply(null, arguments);
+};
+
+var _GS_Show_Camera = Module["_GS_Show_Camera"] = function() {
+ return (_GS_Show_Camera = Module["_GS_Show_Camera"] = Module["asm"]["yb"]).apply(null, arguments);
+};
+
+var _GS_Show_Camera_Position = Module["_GS_Show_Camera_Position"] = function() {
+ return (_GS_Show_Camera_Position = Module["_GS_Show_Camera_Position"] = Module["asm"]["zb"]).apply(null, arguments);
+};
+
+var _GS_Show_Camera_Target = Module["_GS_Show_Camera_Target"] = function() {
+ return (_GS_Show_Camera_Target = Module["_GS_Show_Camera_Target"] = Module["asm"]["Ab"]).apply(null, arguments);
+};
+
+var _GS_Show_Camera_Up = Module["_GS_Show_Camera_Up"] = function() {
+ return (_GS_Show_Camera_Up = Module["_GS_Show_Camera_Up"] = Module["asm"]["Bb"]).apply(null, arguments);
+};
+
+var _GS_Show_Camera_Field = Module["_GS_Show_Camera_Field"] = function() {
+ return (_GS_Show_Camera_Field = Module["_GS_Show_Camera_Field"] = Module["asm"]["Cb"]).apply(null, arguments);
+};
+
+var _GS_Show_Camera_Extent = Module["_GS_Show_Camera_Extent"] = function() {
+ return (_GS_Show_Camera_Extent = Module["_GS_Show_Camera_Extent"] = Module["asm"]["Db"]).apply(null, arguments);
+};
+
+var _GS_Show_Camera_Projection = Module["_GS_Show_Camera_Projection"] = function() {
+ return (_GS_Show_Camera_Projection = Module["_GS_Show_Camera_Projection"] = Module["asm"]["Eb"]).apply(null, arguments);
+};
+
+var _GS_Show_Camera_Projection_Matrix = Module["_GS_Show_Camera_Projection_Matrix"] = function() {
+ return (_GS_Show_Camera_Projection_Matrix = Module["_GS_Show_Camera_Projection_Matrix"] = Module["asm"]["Fb"]).apply(null, arguments);
+};
+
+var _GS_Show_Camera_View_Matrix = Module["_GS_Show_Camera_View_Matrix"] = function() {
+ return (_GS_Show_Camera_View_Matrix = Module["_GS_Show_Camera_View_Matrix"] = Module["asm"]["Gb"]).apply(null, arguments);
+};
+
+var _GS_Show_Path_Camera_Position = Module["_GS_Show_Path_Camera_Position"] = function() {
+ return (_GS_Show_Path_Camera_Position = Module["_GS_Show_Path_Camera_Position"] = Module["asm"]["Hb"]).apply(null, arguments);
+};
+
+var _GS_Show_Path_Camera_Target = Module["_GS_Show_Path_Camera_Target"] = function() {
+ return (_GS_Show_Path_Camera_Target = Module["_GS_Show_Path_Camera_Target"] = Module["asm"]["Ib"]).apply(null, arguments);
+};
+
+var _GS_Dolly_Camera = Module["_GS_Dolly_Camera"] = function() {
+ return (_GS_Dolly_Camera = Module["_GS_Dolly_Camera"] = Module["asm"]["Jb"]).apply(null, arguments);
+};
+
+var _GS_Roll_Camera = Module["_GS_Roll_Camera"] = function() {
+ return (_GS_Roll_Camera = Module["_GS_Roll_Camera"] = Module["asm"]["Kb"]).apply(null, arguments);
+};
+
+var _GS_Zoom_Camera = Module["_GS_Zoom_Camera"] = function() {
+ return (_GS_Zoom_Camera = Module["_GS_Zoom_Camera"] = Module["asm"]["Lb"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Camera = Module["_GS_UnSet_Camera"] = function() {
+ return (_GS_UnSet_Camera = Module["_GS_UnSet_Camera"] = Module["asm"]["Mb"]).apply(null, arguments);
+};
+
+var _GS_Set_Color = Module["_GS_Set_Color"] = function() {
+ return (_GS_Set_Color = Module["_GS_Set_Color"] = Module["asm"]["Nb"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Color = Module["_GS_UnSet_Color"] = function() {
+ return (_GS_UnSet_Color = Module["_GS_UnSet_Color"] = Module["asm"]["Ob"]).apply(null, arguments);
+};
+
+var _GS_UnSet_One_Color = Module["_GS_UnSet_One_Color"] = function() {
+ return (_GS_UnSet_One_Color = Module["_GS_UnSet_One_Color"] = Module["asm"]["Pb"]).apply(null, arguments);
+};
+
+var _GS_Show_Color = Module["_GS_Show_Color"] = function() {
+ return (_GS_Show_Color = Module["_GS_Show_Color"] = Module["asm"]["Qb"]).apply(null, arguments);
+};
+
+var _GS_Show_One_Color = Module["_GS_Show_One_Color"] = function() {
+ return (_GS_Show_One_Color = Module["_GS_Show_One_Color"] = Module["asm"]["Rb"]).apply(null, arguments);
+};
+
+var _GS_Show_Color_By_Value = Module["_GS_Show_Color_By_Value"] = function() {
+ return (_GS_Show_Color_By_Value = Module["_GS_Show_Color_By_Value"] = Module["asm"]["Sb"]).apply(null, arguments);
+};
+
+var _GS_Set_Visibility = Module["_GS_Set_Visibility"] = function() {
+ return (_GS_Set_Visibility = Module["_GS_Set_Visibility"] = Module["asm"]["Tb"]).apply(null, arguments);
+};
+
+var _GS_Show_Visibility = Module["_GS_Show_Visibility"] = function() {
+ return (_GS_Show_Visibility = Module["_GS_Show_Visibility"] = Module["asm"]["Ub"]).apply(null, arguments);
+};
+
+var _GS_Show_One_Visibility = Module["_GS_Show_One_Visibility"] = function() {
+ return (_GS_Show_One_Visibility = Module["_GS_Show_One_Visibility"] = Module["asm"]["Vb"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Visibility = Module["_GS_UnSet_Visibility"] = function() {
+ return (_GS_UnSet_Visibility = Module["_GS_UnSet_Visibility"] = Module["asm"]["Wb"]).apply(null, arguments);
+};
+
+var _GS_UnSet_One_Visibility = Module["_GS_UnSet_One_Visibility"] = function() {
+ return (_GS_UnSet_One_Visibility = Module["_GS_UnSet_One_Visibility"] = Module["asm"]["Xb"]).apply(null, arguments);
+};
+
+var _GS_Set_Selectability = Module["_GS_Set_Selectability"] = function() {
+ return (_GS_Set_Selectability = Module["_GS_Set_Selectability"] = Module["asm"]["Yb"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Selectability = Module["_GS_UnSet_Selectability"] = function() {
+ return (_GS_UnSet_Selectability = Module["_GS_UnSet_Selectability"] = Module["asm"]["Zb"]).apply(null, arguments);
+};
+
+var _GS_UnSet_One_Selectability = Module["_GS_UnSet_One_Selectability"] = function() {
+ return (_GS_UnSet_One_Selectability = Module["_GS_UnSet_One_Selectability"] = Module["asm"]["_b"]).apply(null, arguments);
+};
+
+var _GS_Show_Selectability = Module["_GS_Show_Selectability"] = function() {
+ return (_GS_Show_Selectability = Module["_GS_Show_Selectability"] = Module["asm"]["$b"]).apply(null, arguments);
+};
+
+var _GS_Show_One_Selectability = Module["_GS_Show_One_Selectability"] = function() {
+ return (_GS_Show_One_Selectability = Module["_GS_Show_One_Selectability"] = Module["asm"]["ac"]).apply(null, arguments);
+};
+
+var _GS_Set_Rendering_Options = Module["_GS_Set_Rendering_Options"] = function() {
+ return (_GS_Set_Rendering_Options = Module["_GS_Set_Rendering_Options"] = Module["asm"]["bc"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Rendering_Options = Module["_GS_UnSet_Rendering_Options"] = function() {
+ return (_GS_UnSet_Rendering_Options = Module["_GS_UnSet_Rendering_Options"] = Module["asm"]["cc"]).apply(null, arguments);
+};
+
+var _GS_UnSet_One_Rendering_Option = Module["_GS_UnSet_One_Rendering_Option"] = function() {
+ return (_GS_UnSet_One_Rendering_Option = Module["_GS_UnSet_One_Rendering_Option"] = Module["asm"]["dc"]).apply(null, arguments);
+};
+
+var _GS_Show_Rendering_Options = Module["_GS_Show_Rendering_Options"] = function() {
+ return (_GS_Show_Rendering_Options = Module["_GS_Show_Rendering_Options"] = Module["asm"]["ec"]).apply(null, arguments);
+};
+
+var _GS_Show_One_Rendering_Option = Module["_GS_Show_One_Rendering_Option"] = function() {
+ return (_GS_Show_One_Rendering_Option = Module["_GS_Show_One_Rendering_Option"] = Module["asm"]["fc"]).apply(null, arguments);
+};
+
+var _GS_Show_One_Path_Rendering_Option = Module["_GS_Show_One_Path_Rendering_Option"] = function() {
+ return (_GS_Show_One_Path_Rendering_Option = Module["_GS_Show_One_Path_Rendering_Option"] = Module["asm"]["gc"]).apply(null, arguments);
+};
+
+var _GS_Show_One_Default_Rendering_Option = Module["_GS_Show_One_Default_Rendering_Option"] = function() {
+ return (_GS_Show_One_Default_Rendering_Option = Module["_GS_Show_One_Default_Rendering_Option"] = Module["asm"]["hc"]).apply(null, arguments);
+};
+
+var _GS_Set_Heuristic_Options = Module["_GS_Set_Heuristic_Options"] = function() {
+ return (_GS_Set_Heuristic_Options = Module["_GS_Set_Heuristic_Options"] = Module["asm"]["ic"]).apply(null, arguments);
+};
+
+var _GS_Set_One_Heuristic_Option = Module["_GS_Set_One_Heuristic_Option"] = function() {
+ return (_GS_Set_One_Heuristic_Option = Module["_GS_Set_One_Heuristic_Option"] = Module["asm"]["jc"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Heuristic_Options = Module["_GS_UnSet_Heuristic_Options"] = function() {
+ return (_GS_UnSet_Heuristic_Options = Module["_GS_UnSet_Heuristic_Options"] = Module["asm"]["kc"]).apply(null, arguments);
+};
+
+var _GS_UnSet_One_Heuristic_Option = Module["_GS_UnSet_One_Heuristic_Option"] = function() {
+ return (_GS_UnSet_One_Heuristic_Option = Module["_GS_UnSet_One_Heuristic_Option"] = Module["asm"]["lc"]).apply(null, arguments);
+};
+
+var _GS_Show_Heuristic_Options = Module["_GS_Show_Heuristic_Options"] = function() {
+ return (_GS_Show_Heuristic_Options = Module["_GS_Show_Heuristic_Options"] = Module["asm"]["mc"]).apply(null, arguments);
+};
+
+var _GS_Show_One_Heuristic_Option = Module["_GS_Show_One_Heuristic_Option"] = function() {
+ return (_GS_Show_One_Heuristic_Option = Module["_GS_Show_One_Heuristic_Option"] = Module["asm"]["nc"]).apply(null, arguments);
+};
+
+var _GS_Set_ModellingMatrix = Module["_GS_Set_ModellingMatrix"] = function() {
+ return (_GS_Set_ModellingMatrix = Module["_GS_Set_ModellingMatrix"] = Module["asm"]["oc"]).apply(null, arguments);
+};
+
+var _GS_UnSet_ModellingMatrix = Module["_GS_UnSet_ModellingMatrix"] = function() {
+ return (_GS_UnSet_ModellingMatrix = Module["_GS_UnSet_ModellingMatrix"] = Module["asm"]["pc"]).apply(null, arguments);
+};
+
+var _GS_Append_ModellingMatrix = Module["_GS_Append_ModellingMatrix"] = function() {
+ return (_GS_Append_ModellingMatrix = Module["_GS_Append_ModellingMatrix"] = Module["asm"]["qc"]).apply(null, arguments);
+};
+
+var _GS_Show_ModellingMatrix = Module["_GS_Show_ModellingMatrix"] = function() {
+ return (_GS_Show_ModellingMatrix = Module["_GS_Show_ModellingMatrix"] = Module["asm"]["rc"]).apply(null, arguments);
+};
+
+var _GS_Show_Path_ModellingMatrix = Module["_GS_Show_Path_ModellingMatrix"] = function() {
+ return (_GS_Show_Path_ModellingMatrix = Module["_GS_Show_Path_ModellingMatrix"] = Module["asm"]["sc"]).apply(null, arguments);
+};
+
+var _GS_Set_Condition = Module["_GS_Set_Condition"] = function() {
+ return (_GS_Set_Condition = Module["_GS_Set_Condition"] = Module["asm"]["tc"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Condition = Module["_GS_UnSet_Condition"] = function() {
+ return (_GS_UnSet_Condition = Module["_GS_UnSet_Condition"] = Module["asm"]["uc"]).apply(null, arguments);
+};
+
+var _GS_Show_Condition = Module["_GS_Show_Condition"] = function() {
+ return (_GS_Show_Condition = Module["_GS_Show_Condition"] = Module["asm"]["vc"]).apply(null, arguments);
+};
+
+var _GS_Set_Text_Font = Module["_GS_Set_Text_Font"] = function() {
+ return (_GS_Set_Text_Font = Module["_GS_Set_Text_Font"] = Module["asm"]["wc"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Text_Font = Module["_GS_UnSet_Text_Font"] = function() {
+ return (_GS_UnSet_Text_Font = Module["_GS_UnSet_Text_Font"] = Module["asm"]["xc"]).apply(null, arguments);
+};
+
+var _GS_UnSet_One_Text_Font = Module["_GS_UnSet_One_Text_Font"] = function() {
+ return (_GS_UnSet_One_Text_Font = Module["_GS_UnSet_One_Text_Font"] = Module["asm"]["yc"]).apply(null, arguments);
+};
+
+var _GS_Show_Text_Font = Module["_GS_Show_Text_Font"] = function() {
+ return (_GS_Show_Text_Font = Module["_GS_Show_Text_Font"] = Module["asm"]["zc"]).apply(null, arguments);
+};
+
+var _GS_Show_One_Text_Font = Module["_GS_Show_One_Text_Font"] = function() {
+ return (_GS_Show_One_Text_Font = Module["_GS_Show_One_Text_Font"] = Module["asm"]["Ac"]).apply(null, arguments);
+};
+
+var _GS_Attribute_Exists = Module["_GS_Attribute_Exists"] = function() {
+ return (_GS_Attribute_Exists = Module["_GS_Attribute_Exists"] = Module["asm"]["Bc"]).apply(null, arguments);
+};
+
+var _GS_Make_Context_Current = Module["_GS_Make_Context_Current"] = function() {
+ return (_GS_Make_Context_Current = Module["_GS_Make_Context_Current"] = Module["asm"]["Cc"]).apply(null, arguments);
+};
+
+var _GS_Show_Asyn_Buffer_Geometry_Count = Module["_GS_Show_Asyn_Buffer_Geometry_Count"] = function() {
+ return (_GS_Show_Asyn_Buffer_Geometry_Count = Module["_GS_Show_Asyn_Buffer_Geometry_Count"] = Module["asm"]["Dc"]).apply(null, arguments);
+};
+
+var _GS_Show_Asyn_Buffer_Geometry_Keys = Module["_GS_Show_Asyn_Buffer_Geometry_Keys"] = function() {
+ return (_GS_Show_Asyn_Buffer_Geometry_Keys = Module["_GS_Show_Asyn_Buffer_Geometry_Keys"] = Module["asm"]["Ec"]).apply(null, arguments);
+};
+
+var _GS_Show_Asyn_Unbuffer_Geometry_Count = Module["_GS_Show_Asyn_Unbuffer_Geometry_Count"] = function() {
+ return (_GS_Show_Asyn_Unbuffer_Geometry_Count = Module["_GS_Show_Asyn_Unbuffer_Geometry_Count"] = Module["asm"]["Fc"]).apply(null, arguments);
+};
+
+var _GS_Show_Asyn_Unbuffer_Geometry_Keys = Module["_GS_Show_Asyn_Unbuffer_Geometry_Keys"] = function() {
+ return (_GS_Show_Asyn_Unbuffer_Geometry_Keys = Module["_GS_Show_Asyn_Unbuffer_Geometry_Keys"] = Module["asm"]["Gc"]).apply(null, arguments);
+};
+
+var _GS_Show_Asyn_Geometry_Data_Count = Module["_GS_Show_Asyn_Geometry_Data_Count"] = function() {
+ return (_GS_Show_Asyn_Geometry_Data_Count = Module["_GS_Show_Asyn_Geometry_Data_Count"] = Module["asm"]["Hc"]).apply(null, arguments);
+};
+
+var _GS_Show_Asyn_Geometry_Data_Keys = Module["_GS_Show_Asyn_Geometry_Data_Keys"] = function() {
+ return (_GS_Show_Asyn_Geometry_Data_Keys = Module["_GS_Show_Asyn_Geometry_Data_Keys"] = Module["asm"]["Ic"]).apply(null, arguments);
+};
+
+var _GS_Show_Asyn_Remove_Geometry_Data_Keys = Module["_GS_Show_Asyn_Remove_Geometry_Data_Keys"] = function() {
+ return (_GS_Show_Asyn_Remove_Geometry_Data_Keys = Module["_GS_Show_Asyn_Remove_Geometry_Data_Keys"] = Module["asm"]["Jc"]).apply(null, arguments);
+};
+
+var _gsGetError = Module["_gsGetError"] = function() {
+ return (_gsGetError = Module["_gsGetError"] = Module["asm"]["Kc"]).apply(null, arguments);
+};
+
+var _GS_Init_Database = Module["_GS_Init_Database"] = function() {
+ return (_GS_Init_Database = Module["_GS_Init_Database"] = Module["asm"]["Lc"]).apply(null, arguments);
+};
+
+var _GS_Fina_Database = Module["_GS_Fina_Database"] = function() {
+ return (_GS_Fina_Database = Module["_GS_Fina_Database"] = Module["asm"]["Mc"]).apply(null, arguments);
+};
+
+var _GS_Update_Display = Module["_GS_Update_Display"] = function() {
+ return (_GS_Update_Display = Module["_GS_Update_Display"] = Module["asm"]["Nc"]).apply(null, arguments);
+};
+
+var _GS_Update_View_Display_By_Key = Module["_GS_Update_View_Display_By_Key"] = function() {
+ return (_GS_Update_View_Display_By_Key = Module["_GS_Update_View_Display_By_Key"] = Module["asm"]["Oc"]).apply(null, arguments);
+};
+
+var _GS_Update_View_Display_With_Framerate_By_Key = Module["_GS_Update_View_Display_With_Framerate_By_Key"] = function() {
+ return (_GS_Update_View_Display_With_Framerate_By_Key = Module["_GS_Update_View_Display_With_Framerate_By_Key"] = Module["asm"]["Pc"]).apply(null, arguments);
+};
+
+var _GS_Update_View_Display_With_Time_By_Key = Module["_GS_Update_View_Display_With_Time_By_Key"] = function() {
+ return (_GS_Update_View_Display_With_Time_By_Key = Module["_GS_Update_View_Display_With_Time_By_Key"] = Module["asm"]["Qc"]).apply(null, arguments);
+};
+
+var _GS_Asyn_Update_Geometry_Data_By_Key = Module["_GS_Asyn_Update_Geometry_Data_By_Key"] = function() {
+ return (_GS_Asyn_Update_Geometry_Data_By_Key = Module["_GS_Asyn_Update_Geometry_Data_By_Key"] = Module["asm"]["Rc"]).apply(null, arguments);
+};
+
+var _GS_Asyn_Update_Geometry_By_Key = Module["_GS_Asyn_Update_Geometry_By_Key"] = function() {
+ return (_GS_Asyn_Update_Geometry_By_Key = Module["_GS_Asyn_Update_Geometry_By_Key"] = Module["asm"]["Sc"]).apply(null, arguments);
+};
+
+var _GS_Asyn_Update_Camera_By_Key = Module["_GS_Asyn_Update_Camera_By_Key"] = function() {
+ return (_GS_Asyn_Update_Camera_By_Key = Module["_GS_Asyn_Update_Camera_By_Key"] = Module["asm"]["Tc"]).apply(null, arguments);
+};
+
+var _GS_Asyn_Update_View_By_Key = Module["_GS_Asyn_Update_View_By_Key"] = function() {
+ return (_GS_Asyn_Update_View_By_Key = Module["_GS_Asyn_Update_View_By_Key"] = Module["asm"]["Uc"]).apply(null, arguments);
+};
+
+var _GS_Asyn_Buffer_Geometry_By_Key = Module["_GS_Asyn_Buffer_Geometry_By_Key"] = function() {
+ return (_GS_Asyn_Buffer_Geometry_By_Key = Module["_GS_Asyn_Buffer_Geometry_By_Key"] = Module["asm"]["Vc"]).apply(null, arguments);
+};
+
+var _GS_Asyn_Unbuffer_Geometry_By_Key = Module["_GS_Asyn_Unbuffer_Geometry_By_Key"] = function() {
+ return (_GS_Asyn_Unbuffer_Geometry_By_Key = Module["_GS_Asyn_Unbuffer_Geometry_By_Key"] = Module["asm"]["Wc"]).apply(null, arguments);
+};
+
+var _GS_Asyn_Render_View_By_Key = Module["_GS_Asyn_Render_View_By_Key"] = function() {
+ return (_GS_Asyn_Render_View_By_Key = Module["_GS_Asyn_Render_View_By_Key"] = Module["asm"]["Xc"]).apply(null, arguments);
+};
+
+var _GS_Asyn_Need_Update_View_By_Key = Module["_GS_Asyn_Need_Update_View_By_Key"] = function() {
+ return (_GS_Asyn_Need_Update_View_By_Key = Module["_GS_Asyn_Need_Update_View_By_Key"] = Module["asm"]["Yc"]).apply(null, arguments);
+};
+
+var _GS_Save_Segment = Module["_GS_Save_Segment"] = function() {
+ return (_GS_Save_Segment = Module["_GS_Save_Segment"] = Module["asm"]["Zc"]).apply(null, arguments);
+};
+
+var _GS_Save_Segment_By_Key = Module["_GS_Save_Segment_By_Key"] = function() {
+ return (_GS_Save_Segment_By_Key = Module["_GS_Save_Segment_By_Key"] = Module["asm"]["_c"]).apply(null, arguments);
+};
+
+var _GS_Load_Segment = Module["_GS_Load_Segment"] = function() {
+ return (_GS_Load_Segment = Module["_GS_Load_Segment"] = Module["asm"]["$c"]).apply(null, arguments);
+};
+
+var _GS_Load_Segment_With_Compression = Module["_GS_Load_Segment_With_Compression"] = function() {
+ return (_GS_Load_Segment_With_Compression = Module["_GS_Load_Segment_With_Compression"] = Module["asm"]["ad"]).apply(null, arguments);
+};
+
+var _GS_Load_Segment_By_Key = Module["_GS_Load_Segment_By_Key"] = function() {
+ return (_GS_Load_Segment_By_Key = Module["_GS_Load_Segment_By_Key"] = Module["asm"]["bd"]).apply(null, arguments);
+};
+
+var _GS_Load_Segment_With_Compression_By_Key = Module["_GS_Load_Segment_With_Compression_By_Key"] = function() {
+ return (_GS_Load_Segment_With_Compression_By_Key = Module["_GS_Load_Segment_With_Compression_By_Key"] = Module["asm"]["cd"]).apply(null, arguments);
+};
+
+var _GS_Segment_To_Stream = Module["_GS_Segment_To_Stream"] = function() {
+ return (_GS_Segment_To_Stream = Module["_GS_Segment_To_Stream"] = Module["asm"]["dd"]).apply(null, arguments);
+};
+
+var _GS_Segment_To_Stream_By_Key = Module["_GS_Segment_To_Stream_By_Key"] = function() {
+ return (_GS_Segment_To_Stream_By_Key = Module["_GS_Segment_To_Stream_By_Key"] = Module["asm"]["ed"]).apply(null, arguments);
+};
+
+var _GS_Segment_To_Stream_With_Compression = Module["_GS_Segment_To_Stream_With_Compression"] = function() {
+ return (_GS_Segment_To_Stream_With_Compression = Module["_GS_Segment_To_Stream_With_Compression"] = Module["asm"]["fd"]).apply(null, arguments);
+};
+
+var _GS_Segment_To_Stream_With_Compression_By_Key = Module["_GS_Segment_To_Stream_With_Compression_By_Key"] = function() {
+ return (_GS_Segment_To_Stream_With_Compression_By_Key = Module["_GS_Segment_To_Stream_With_Compression_By_Key"] = Module["asm"]["gd"]).apply(null, arguments);
+};
+
+var _GS_Stream_To_Segment = Module["_GS_Stream_To_Segment"] = function() {
+ return (_GS_Stream_To_Segment = Module["_GS_Stream_To_Segment"] = Module["asm"]["hd"]).apply(null, arguments);
+};
+
+var _GS_Stream_To_Segment_By_Key = Module["_GS_Stream_To_Segment_By_Key"] = function() {
+ return (_GS_Stream_To_Segment_By_Key = Module["_GS_Stream_To_Segment_By_Key"] = Module["asm"]["id"]).apply(null, arguments);
+};
+
+var _GS_Stream_With_Compression_To_Segment = Module["_GS_Stream_With_Compression_To_Segment"] = function() {
+ return (_GS_Stream_With_Compression_To_Segment = Module["_GS_Stream_With_Compression_To_Segment"] = Module["asm"]["jd"]).apply(null, arguments);
+};
+
+var _GS_Stream_With_Compression_To_Segment_By_Key = Module["_GS_Stream_With_Compression_To_Segment_By_Key"] = function() {
+ return (_GS_Stream_With_Compression_To_Segment_By_Key = Module["_GS_Stream_With_Compression_To_Segment_By_Key"] = Module["asm"]["kd"]).apply(null, arguments);
+};
+
+var _GS_Segment_Data_To_Stream = Module["_GS_Segment_Data_To_Stream"] = function() {
+ return (_GS_Segment_Data_To_Stream = Module["_GS_Segment_Data_To_Stream"] = Module["asm"]["ld"]).apply(null, arguments);
+};
+
+var _GS_Stream_To_Segment_Data = Module["_GS_Stream_To_Segment_Data"] = function() {
+ return (_GS_Stream_To_Segment_Data = Module["_GS_Stream_To_Segment_Data"] = Module["asm"]["md"]).apply(null, arguments);
+};
+
+var _GS_Geometry_Data_To_Stream = Module["_GS_Geometry_Data_To_Stream"] = function() {
+ return (_GS_Geometry_Data_To_Stream = Module["_GS_Geometry_Data_To_Stream"] = Module["asm"]["nd"]).apply(null, arguments);
+};
+
+var _GS_Geometry_Data_To_Stream_With_Compression = Module["_GS_Geometry_Data_To_Stream_With_Compression"] = function() {
+ return (_GS_Geometry_Data_To_Stream_With_Compression = Module["_GS_Geometry_Data_To_Stream_With_Compression"] = Module["asm"]["od"]).apply(null, arguments);
+};
+
+var _GS_Stream_To_Geometry_Data_With_Compression = Module["_GS_Stream_To_Geometry_Data_With_Compression"] = function() {
+ return (_GS_Stream_To_Geometry_Data_With_Compression = Module["_GS_Stream_To_Geometry_Data_With_Compression"] = Module["asm"]["pd"]).apply(null, arguments);
+};
+
+var _GS_Stream_To_Geometry_Data = Module["_GS_Stream_To_Geometry_Data"] = function() {
+ return (_GS_Stream_To_Geometry_Data = Module["_GS_Stream_To_Geometry_Data"] = Module["asm"]["qd"]).apply(null, arguments);
+};
+
+var _GS_Stream_To_Geometry_Data_By_Key = Module["_GS_Stream_To_Geometry_Data_By_Key"] = function() {
+ return (_GS_Stream_To_Geometry_Data_By_Key = Module["_GS_Stream_To_Geometry_Data_By_Key"] = Module["asm"]["rd"]).apply(null, arguments);
+};
+
+var _GS_Stream_To_Geometry_Data_By_Keys = Module["_GS_Stream_To_Geometry_Data_By_Keys"] = function() {
+ return (_GS_Stream_To_Geometry_Data_By_Keys = Module["_GS_Stream_To_Geometry_Data_By_Keys"] = Module["asm"]["sd"]).apply(null, arguments);
+};
+
+var _GS_Copy_Segment_By_Key = Module["_GS_Copy_Segment_By_Key"] = function() {
+ return (_GS_Copy_Segment_By_Key = Module["_GS_Copy_Segment_By_Key"] = Module["asm"]["td"]).apply(null, arguments);
+};
+
+var _GS_Compress_File = Module["_GS_Compress_File"] = function() {
+ return (_GS_Compress_File = Module["_GS_Compress_File"] = Module["asm"]["ud"]).apply(null, arguments);
+};
+
+var _GS_Define_Error_Handler = Module["_GS_Define_Error_Handler"] = function() {
+ return (_GS_Define_Error_Handler = Module["_GS_Define_Error_Handler"] = Module["asm"]["vd"]).apply(null, arguments);
+};
+
+var _GS_Define_Log_Handler = Module["_GS_Define_Log_Handler"] = function() {
+ return (_GS_Define_Log_Handler = Module["_GS_Define_Log_Handler"] = Module["asm"]["wd"]).apply(null, arguments);
+};
+
+var _GS_Show_Database_Info = Module["_GS_Show_Database_Info"] = function() {
+ return (_GS_Show_Database_Info = Module["_GS_Show_Database_Info"] = Module["asm"]["xd"]).apply(null, arguments);
+};
+
+var _GS_Show_Allocated_Memory_Size = Module["_GS_Show_Allocated_Memory_Size"] = function() {
+ return (_GS_Show_Allocated_Memory_Size = Module["_GS_Show_Allocated_Memory_Size"] = Module["asm"]["yd"]).apply(null, arguments);
+};
+
+var _GS_Insert_Marker = Module["_GS_Insert_Marker"] = function() {
+ return (_GS_Insert_Marker = Module["_GS_Insert_Marker"] = Module["asm"]["zd"]).apply(null, arguments);
+};
+
+var _GS_Edit_Marker = Module["_GS_Edit_Marker"] = function() {
+ return (_GS_Edit_Marker = Module["_GS_Edit_Marker"] = Module["asm"]["Ad"]).apply(null, arguments);
+};
+
+var _GS_Show_Marker = Module["_GS_Show_Marker"] = function() {
+ return (_GS_Show_Marker = Module["_GS_Show_Marker"] = Module["asm"]["Bd"]).apply(null, arguments);
+};
+
+var _GS_Insert_Point_Cloud = Module["_GS_Insert_Point_Cloud"] = function() {
+ return (_GS_Insert_Point_Cloud = Module["_GS_Insert_Point_Cloud"] = Module["asm"]["Cd"]).apply(null, arguments);
+};
+
+var _GS_Edit_Point_Cloud = Module["_GS_Edit_Point_Cloud"] = function() {
+ return (_GS_Edit_Point_Cloud = Module["_GS_Edit_Point_Cloud"] = Module["asm"]["Dd"]).apply(null, arguments);
+};
+
+var _GS_Show_Point_Cloud_Count = Module["_GS_Show_Point_Cloud_Count"] = function() {
+ return (_GS_Show_Point_Cloud_Count = Module["_GS_Show_Point_Cloud_Count"] = Module["asm"]["Ed"]).apply(null, arguments);
+};
+
+var _GS_Show_Point_Cloud = Module["_GS_Show_Point_Cloud"] = function() {
+ return (_GS_Show_Point_Cloud = Module["_GS_Show_Point_Cloud"] = Module["asm"]["Fd"]).apply(null, arguments);
+};
+
+var _GS_Insert_Line = Module["_GS_Insert_Line"] = function() {
+ return (_GS_Insert_Line = Module["_GS_Insert_Line"] = Module["asm"]["Gd"]).apply(null, arguments);
+};
+
+var _GS_Show_Line = Module["_GS_Show_Line"] = function() {
+ return (_GS_Show_Line = Module["_GS_Show_Line"] = Module["asm"]["Hd"]).apply(null, arguments);
+};
+
+var _GS_Edit_Line = Module["_GS_Edit_Line"] = function() {
+ return (_GS_Edit_Line = Module["_GS_Edit_Line"] = Module["asm"]["Id"]).apply(null, arguments);
+};
+
+var _GS_Insert_Polyline = Module["_GS_Insert_Polyline"] = function() {
+ return (_GS_Insert_Polyline = Module["_GS_Insert_Polyline"] = Module["asm"]["Jd"]).apply(null, arguments);
+};
+
+var _GS_Show_Polyline = Module["_GS_Show_Polyline"] = function() {
+ return (_GS_Show_Polyline = Module["_GS_Show_Polyline"] = Module["asm"]["Kd"]).apply(null, arguments);
+};
+
+var _GS_Show_Polyline_Count = Module["_GS_Show_Polyline_Count"] = function() {
+ return (_GS_Show_Polyline_Count = Module["_GS_Show_Polyline_Count"] = Module["asm"]["Ld"]).apply(null, arguments);
+};
+
+var _GS_Edit_Polyline = Module["_GS_Edit_Polyline"] = function() {
+ return (_GS_Edit_Polyline = Module["_GS_Edit_Polyline"] = Module["asm"]["Md"]).apply(null, arguments);
+};
+
+var _GS_Insert_Circular_Arc = Module["_GS_Insert_Circular_Arc"] = function() {
+ return (_GS_Insert_Circular_Arc = Module["_GS_Insert_Circular_Arc"] = Module["asm"]["Nd"]).apply(null, arguments);
+};
+
+var _GS_Show_Circular_Arc = Module["_GS_Show_Circular_Arc"] = function() {
+ return (_GS_Show_Circular_Arc = Module["_GS_Show_Circular_Arc"] = Module["asm"]["Od"]).apply(null, arguments);
+};
+
+var _GS_Edit_Circular_Arc = Module["_GS_Edit_Circular_Arc"] = function() {
+ return (_GS_Edit_Circular_Arc = Module["_GS_Edit_Circular_Arc"] = Module["asm"]["Pd"]).apply(null, arguments);
+};
+
+var _GS_Insert_Ellipse_Arc = Module["_GS_Insert_Ellipse_Arc"] = function() {
+ return (_GS_Insert_Ellipse_Arc = Module["_GS_Insert_Ellipse_Arc"] = Module["asm"]["Qd"]).apply(null, arguments);
+};
+
+var _GS_Show_Ellipse_Arc = Module["_GS_Show_Ellipse_Arc"] = function() {
+ return (_GS_Show_Ellipse_Arc = Module["_GS_Show_Ellipse_Arc"] = Module["asm"]["Rd"]).apply(null, arguments);
+};
+
+var _GS_Edit_Ellipse_Arc = Module["_GS_Edit_Ellipse_Arc"] = function() {
+ return (_GS_Edit_Ellipse_Arc = Module["_GS_Edit_Ellipse_Arc"] = Module["asm"]["Sd"]).apply(null, arguments);
+};
+
+var _GS_Insert_Circle = Module["_GS_Insert_Circle"] = function() {
+ return (_GS_Insert_Circle = Module["_GS_Insert_Circle"] = Module["asm"]["Td"]).apply(null, arguments);
+};
+
+var _GS_Show_Circle = Module["_GS_Show_Circle"] = function() {
+ return (_GS_Show_Circle = Module["_GS_Show_Circle"] = Module["asm"]["Ud"]).apply(null, arguments);
+};
+
+var _GS_Edit_Circle = Module["_GS_Edit_Circle"] = function() {
+ return (_GS_Edit_Circle = Module["_GS_Edit_Circle"] = Module["asm"]["Vd"]).apply(null, arguments);
+};
+
+var _GS_Insert_Ellipse = Module["_GS_Insert_Ellipse"] = function() {
+ return (_GS_Insert_Ellipse = Module["_GS_Insert_Ellipse"] = Module["asm"]["Wd"]).apply(null, arguments);
+};
+
+var _GS_Show_Ellipse = Module["_GS_Show_Ellipse"] = function() {
+ return (_GS_Show_Ellipse = Module["_GS_Show_Ellipse"] = Module["asm"]["Xd"]).apply(null, arguments);
+};
+
+var _GS_Edit_Ellipse = Module["_GS_Edit_Ellipse"] = function() {
+ return (_GS_Edit_Ellipse = Module["_GS_Edit_Ellipse"] = Module["asm"]["Yd"]).apply(null, arguments);
+};
+
+var _GS_Insert_Cylinder = Module["_GS_Insert_Cylinder"] = function() {
+ return (_GS_Insert_Cylinder = Module["_GS_Insert_Cylinder"] = Module["asm"]["Zd"]).apply(null, arguments);
+};
+
+var _GS_Show_Cylinder = Module["_GS_Show_Cylinder"] = function() {
+ return (_GS_Show_Cylinder = Module["_GS_Show_Cylinder"] = Module["asm"]["_d"]).apply(null, arguments);
+};
+
+var _GS_Edit_Cylinder = Module["_GS_Edit_Cylinder"] = function() {
+ return (_GS_Edit_Cylinder = Module["_GS_Edit_Cylinder"] = Module["asm"]["$d"]).apply(null, arguments);
+};
+
+var _GS_Insert_PolyCylinder = Module["_GS_Insert_PolyCylinder"] = function() {
+ return (_GS_Insert_PolyCylinder = Module["_GS_Insert_PolyCylinder"] = Module["asm"]["ae"]).apply(null, arguments);
+};
+
+var _GS_Show_PolyCylinder_Count = Module["_GS_Show_PolyCylinder_Count"] = function() {
+ return (_GS_Show_PolyCylinder_Count = Module["_GS_Show_PolyCylinder_Count"] = Module["asm"]["be"]).apply(null, arguments);
+};
+
+var _GS_Show_PolyCylinder = Module["_GS_Show_PolyCylinder"] = function() {
+ return (_GS_Show_PolyCylinder = Module["_GS_Show_PolyCylinder"] = Module["asm"]["ce"]).apply(null, arguments);
+};
+
+var _GS_Edit_PolyCylinder = Module["_GS_Edit_PolyCylinder"] = function() {
+ return (_GS_Edit_PolyCylinder = Module["_GS_Edit_PolyCylinder"] = Module["asm"]["de"]).apply(null, arguments);
+};
+
+var _GS_Insert_Shell = Module["_GS_Insert_Shell"] = function() {
+ return (_GS_Insert_Shell = Module["_GS_Insert_Shell"] = Module["asm"]["ee"]).apply(null, arguments);
+};
+
+var _GS_Edit_Shell = Module["_GS_Edit_Shell"] = function() {
+ return (_GS_Edit_Shell = Module["_GS_Edit_Shell"] = Module["asm"]["fe"]).apply(null, arguments);
+};
+
+var _GS_Show_Shell = Module["_GS_Show_Shell"] = function() {
+ return (_GS_Show_Shell = Module["_GS_Show_Shell"] = Module["asm"]["ge"]).apply(null, arguments);
+};
+
+var _GS_Show_Shell_Size = Module["_GS_Show_Shell_Size"] = function() {
+ return (_GS_Show_Shell_Size = Module["_GS_Show_Shell_Size"] = Module["asm"]["he"]).apply(null, arguments);
+};
+
+var _GS_Insert_Triangular_Shell = Module["_GS_Insert_Triangular_Shell"] = function() {
+ return (_GS_Insert_Triangular_Shell = Module["_GS_Insert_Triangular_Shell"] = Module["asm"]["ie"]).apply(null, arguments);
+};
+
+var _GS_Insert_Mesh = Module["_GS_Insert_Mesh"] = function() {
+ return (_GS_Insert_Mesh = Module["_GS_Insert_Mesh"] = Module["asm"]["je"]).apply(null, arguments);
+};
+
+var _GS_Edit_Mesh_Points = Module["_GS_Edit_Mesh_Points"] = function() {
+ return (_GS_Edit_Mesh_Points = Module["_GS_Edit_Mesh_Points"] = Module["asm"]["ke"]).apply(null, arguments);
+};
+
+var _GS_Show_Mesh_Size = Module["_GS_Show_Mesh_Size"] = function() {
+ return (_GS_Show_Mesh_Size = Module["_GS_Show_Mesh_Size"] = Module["asm"]["le"]).apply(null, arguments);
+};
+
+var _GS_Show_Mesh = Module["_GS_Show_Mesh"] = function() {
+ return (_GS_Show_Mesh = Module["_GS_Show_Mesh"] = Module["asm"]["me"]).apply(null, arguments);
+};
+
+var _GS_Insert_Light = Module["_GS_Insert_Light"] = function() {
+ return (_GS_Insert_Light = Module["_GS_Insert_Light"] = Module["asm"]["ne"]).apply(null, arguments);
+};
+
+var _GS_Edit_Light = Module["_GS_Edit_Light"] = function() {
+ return (_GS_Edit_Light = Module["_GS_Edit_Light"] = Module["asm"]["oe"]).apply(null, arguments);
+};
+
+var _GS_Show_Light = Module["_GS_Show_Light"] = function() {
+ return (_GS_Show_Light = Module["_GS_Show_Light"] = Module["asm"]["pe"]).apply(null, arguments);
+};
+
+var _GS_Insert_Image = Module["_GS_Insert_Image"] = function() {
+ return (_GS_Insert_Image = Module["_GS_Insert_Image"] = Module["asm"]["qe"]).apply(null, arguments);
+};
+
+var _GS_Set_Image_Options = Module["_GS_Set_Image_Options"] = function() {
+ return (_GS_Set_Image_Options = Module["_GS_Set_Image_Options"] = Module["asm"]["re"]).apply(null, arguments);
+};
+
+var _GS_UnSet_One_Image_Option = Module["_GS_UnSet_One_Image_Option"] = function() {
+ return (_GS_UnSet_One_Image_Option = Module["_GS_UnSet_One_Image_Option"] = Module["asm"]["se"]).apply(null, arguments);
+};
+
+var _GS_Set_Image_Data = Module["_GS_Set_Image_Data"] = function() {
+ return (_GS_Set_Image_Data = Module["_GS_Set_Image_Data"] = Module["asm"]["te"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Image_Data = Module["_GS_UnSet_Image_Data"] = function() {
+ return (_GS_UnSet_Image_Data = Module["_GS_UnSet_Image_Data"] = Module["asm"]["ue"]).apply(null, arguments);
+};
+
+var _GS_Show_Image_Position = Module["_GS_Show_Image_Position"] = function() {
+ return (_GS_Show_Image_Position = Module["_GS_Show_Image_Position"] = Module["asm"]["ve"]).apply(null, arguments);
+};
+
+var _GS_Show_Image_Size = Module["_GS_Show_Image_Size"] = function() {
+ return (_GS_Show_Image_Size = Module["_GS_Show_Image_Size"] = Module["asm"]["we"]).apply(null, arguments);
+};
+
+var _GS_Show_Image_Data_Size = Module["_GS_Show_Image_Data_Size"] = function() {
+ return (_GS_Show_Image_Data_Size = Module["_GS_Show_Image_Data_Size"] = Module["asm"]["xe"]).apply(null, arguments);
+};
+
+var _GS_Show_Image_Data = Module["_GS_Show_Image_Data"] = function() {
+ return (_GS_Show_Image_Data = Module["_GS_Show_Image_Data"] = Module["asm"]["ye"]).apply(null, arguments);
+};
+
+var _GS_Show_Image_Options = Module["_GS_Show_Image_Options"] = function() {
+ return (_GS_Show_Image_Options = Module["_GS_Show_Image_Options"] = Module["asm"]["ze"]).apply(null, arguments);
+};
+
+var _GS_Show_One_Image_Option = Module["_GS_Show_One_Image_Option"] = function() {
+ return (_GS_Show_One_Image_Option = Module["_GS_Show_One_Image_Option"] = Module["asm"]["Ae"]).apply(null, arguments);
+};
+
+var _GS_Show_Image = Module["_GS_Show_Image"] = function() {
+ return (_GS_Show_Image = Module["_GS_Show_Image"] = Module["asm"]["Be"]).apply(null, arguments);
+};
+
+var _GS_Insert_Cutting_Planes = Module["_GS_Insert_Cutting_Planes"] = function() {
+ return (_GS_Insert_Cutting_Planes = Module["_GS_Insert_Cutting_Planes"] = Module["asm"]["Ce"]).apply(null, arguments);
+};
+
+var _GS_Edit_Cutting_Planes = Module["_GS_Edit_Cutting_Planes"] = function() {
+ return (_GS_Edit_Cutting_Planes = Module["_GS_Edit_Cutting_Planes"] = Module["asm"]["De"]).apply(null, arguments);
+};
+
+var _GS_Show_Cutting_Planes = Module["_GS_Show_Cutting_Planes"] = function() {
+ return (_GS_Show_Cutting_Planes = Module["_GS_Show_Cutting_Planes"] = Module["asm"]["Ee"]).apply(null, arguments);
+};
+
+var _GS_Image_Exists = Module["_GS_Image_Exists"] = function() {
+ return (_GS_Image_Exists = Module["_GS_Image_Exists"] = Module["asm"]["Fe"]).apply(null, arguments);
+};
+
+var _GS_Set_Geometry_Color = Module["_GS_Set_Geometry_Color"] = function() {
+ return (_GS_Set_Geometry_Color = Module["_GS_Set_Geometry_Color"] = Module["asm"]["Ge"]).apply(null, arguments);
+};
+
+var _GS_Set_Geometry_Color_By_Value = Module["_GS_Set_Geometry_Color_By_Value"] = function() {
+ return (_GS_Set_Geometry_Color_By_Value = Module["_GS_Set_Geometry_Color_By_Value"] = Module["asm"]["He"]).apply(null, arguments);
+};
+
+var _GS_Show_Geometry_Color_Type = Module["_GS_Show_Geometry_Color_Type"] = function() {
+ return (_GS_Show_Geometry_Color_Type = Module["_GS_Show_Geometry_Color_Type"] = Module["asm"]["Ie"]).apply(null, arguments);
+};
+
+var _GS_Show_Geometry_Color_By_Value = Module["_GS_Show_Geometry_Color_By_Value"] = function() {
+ return (_GS_Show_Geometry_Color_By_Value = Module["_GS_Show_Geometry_Color_By_Value"] = Module["asm"]["Je"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Geometry_Color = Module["_GS_UnSet_Geometry_Color"] = function() {
+ return (_GS_UnSet_Geometry_Color = Module["_GS_UnSet_Geometry_Color"] = Module["asm"]["Ke"]).apply(null, arguments);
+};
+
+var _GS_Show_Geometry_Vertices_Position_By_Indexes = Module["_GS_Show_Geometry_Vertices_Position_By_Indexes"] = function() {
+ return (_GS_Show_Geometry_Vertices_Position_By_Indexes = Module["_GS_Show_Geometry_Vertices_Position_By_Indexes"] = Module["asm"]["Le"]).apply(null, arguments);
+};
+
+var _GS_Show_Geometry_Element_Type = Module["_GS_Show_Geometry_Element_Type"] = function() {
+ return (_GS_Show_Geometry_Element_Type = Module["_GS_Show_Geometry_Element_Type"] = Module["asm"]["Me"]).apply(null, arguments);
+};
+
+var _GS_Set_Geometry_Texture_Coords = Module["_GS_Set_Geometry_Texture_Coords"] = function() {
+ return (_GS_Set_Geometry_Texture_Coords = Module["_GS_Set_Geometry_Texture_Coords"] = Module["asm"]["Ne"]).apply(null, arguments);
+};
+
+var _GS_Show_Geometry_Texture_Coords = Module["_GS_Show_Geometry_Texture_Coords"] = function() {
+ return (_GS_Show_Geometry_Texture_Coords = Module["_GS_Show_Geometry_Texture_Coords"] = Module["asm"]["Oe"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Geometry_Texture_Coords = Module["_GS_UnSet_Geometry_Texture_Coords"] = function() {
+ return (_GS_UnSet_Geometry_Texture_Coords = Module["_GS_UnSet_Geometry_Texture_Coords"] = Module["asm"]["Pe"]).apply(null, arguments);
+};
+
+var _GS_Set_Geometry_Normals = Module["_GS_Set_Geometry_Normals"] = function() {
+ return (_GS_Set_Geometry_Normals = Module["_GS_Set_Geometry_Normals"] = Module["asm"]["Qe"]).apply(null, arguments);
+};
+
+var _GS_Show_Geometry_Normals = Module["_GS_Show_Geometry_Normals"] = function() {
+ return (_GS_Show_Geometry_Normals = Module["_GS_Show_Geometry_Normals"] = Module["asm"]["Re"]).apply(null, arguments);
+};
+
+var _GS_UnSet_Geometry_Normals = Module["_GS_UnSet_Geometry_Normals"] = function() {
+ return (_GS_UnSet_Geometry_Normals = Module["_GS_UnSet_Geometry_Normals"] = Module["asm"]["Se"]).apply(null, arguments);
+};
+
+var _GS_Apply_ModellingMatrix = Module["_GS_Apply_ModellingMatrix"] = function() {
+ return (_GS_Apply_ModellingMatrix = Module["_GS_Apply_ModellingMatrix"] = Module["asm"]["Te"]).apply(null, arguments);
+};
+
+var _GS_Merge_Shell = Module["_GS_Merge_Shell"] = function() {
+ return (_GS_Merge_Shell = Module["_GS_Merge_Shell"] = Module["asm"]["Ue"]).apply(null, arguments);
+};
+
+var _GS_Insert_Vector_Text = Module["_GS_Insert_Vector_Text"] = function() {
+ return (_GS_Insert_Vector_Text = Module["_GS_Insert_Vector_Text"] = Module["asm"]["Ve"]).apply(null, arguments);
+};
+
+var _GS_Extrude_By_Shell = Module["_GS_Extrude_By_Shell"] = function() {
+ return (_GS_Extrude_By_Shell = Module["_GS_Extrude_By_Shell"] = Module["asm"]["We"]).apply(null, arguments);
+};
+
+var _GS_DExtrude_By_Shell = Module["_GS_DExtrude_By_Shell"] = function() {
+ return (_GS_DExtrude_By_Shell = Module["_GS_DExtrude_By_Shell"] = Module["asm"]["Xe"]).apply(null, arguments);
+};
+
+var _GS_Rotate_By_Shell = Module["_GS_Rotate_By_Shell"] = function() {
+ return (_GS_Rotate_By_Shell = Module["_GS_Rotate_By_Shell"] = Module["asm"]["Ye"]).apply(null, arguments);
+};
+
+var _GS_DRotate_By_Shell = Module["_GS_DRotate_By_Shell"] = function() {
+ return (_GS_DRotate_By_Shell = Module["_GS_DRotate_By_Shell"] = Module["asm"]["Ze"]).apply(null, arguments);
+};
+
+var _GS_Sweep_By_Shell = Module["_GS_Sweep_By_Shell"] = function() {
+ return (_GS_Sweep_By_Shell = Module["_GS_Sweep_By_Shell"] = Module["asm"]["_e"]).apply(null, arguments);
+};
+
+var _GS_DSweep_By_Shell = Module["_GS_DSweep_By_Shell"] = function() {
+ return (_GS_DSweep_By_Shell = Module["_GS_DSweep_By_Shell"] = Module["asm"]["$e"]).apply(null, arguments);
+};
+
+var _GS_Compute_Geometry_Intersection = Module["_GS_Compute_Geometry_Intersection"] = function() {
+ return (_GS_Compute_Geometry_Intersection = Module["_GS_Compute_Geometry_Intersection"] = Module["asm"]["af"]).apply(null, arguments);
+};
+
+var _GS_Compute_Geometry_Tessellate_Data = Module["_GS_Compute_Geometry_Tessellate_Data"] = function() {
+ return (_GS_Compute_Geometry_Tessellate_Data = Module["_GS_Compute_Geometry_Tessellate_Data"] = Module["asm"]["bf"]).apply(null, arguments);
+};
+
+var _GS_Show_Geometry_Tessellate_Data_Count = Module["_GS_Show_Geometry_Tessellate_Data_Count"] = function() {
+ return (_GS_Show_Geometry_Tessellate_Data_Count = Module["_GS_Show_Geometry_Tessellate_Data_Count"] = Module["asm"]["cf"]).apply(null, arguments);
+};
+
+var _GS_Show_Geometry_Tessellate_Data = Module["_GS_Show_Geometry_Tessellate_Data"] = function() {
+ return (_GS_Show_Geometry_Tessellate_Data = Module["_GS_Show_Geometry_Tessellate_Data"] = Module["asm"]["df"]).apply(null, arguments);
+};
+
+var _GS_Clear_Geometry_Tessellate_Data = Module["_GS_Clear_Geometry_Tessellate_Data"] = function() {
+ return (_GS_Clear_Geometry_Tessellate_Data = Module["_GS_Clear_Geometry_Tessellate_Data"] = Module["asm"]["ef"]).apply(null, arguments);
+};
+
+var _GS_Compute_Polygon_Area = Module["_GS_Compute_Polygon_Area"] = function() {
+ return (_GS_Compute_Polygon_Area = Module["_GS_Compute_Polygon_Area"] = Module["asm"]["ff"]).apply(null, arguments);
+};
+
+var _GS_Compute_Geometry_Area = Module["_GS_Compute_Geometry_Area"] = function() {
+ return (_GS_Compute_Geometry_Area = Module["_GS_Compute_Geometry_Area"] = Module["asm"]["gf"]).apply(null, arguments);
+};
+
+var _GS_Compute_Geometry_Volume = Module["_GS_Compute_Geometry_Volume"] = function() {
+ return (_GS_Compute_Geometry_Volume = Module["_GS_Compute_Geometry_Volume"] = Module["asm"]["hf"]).apply(null, arguments);
+};
+
+var _GS_Insert_Parametric_Geometry = Module["_GS_Insert_Parametric_Geometry"] = function() {
+ return (_GS_Insert_Parametric_Geometry = Module["_GS_Insert_Parametric_Geometry"] = Module["asm"]["jf"]).apply(null, arguments);
+};
+
+var _GS_Edit_Parametric_Geometry = Module["_GS_Edit_Parametric_Geometry"] = function() {
+ return (_GS_Edit_Parametric_Geometry = Module["_GS_Edit_Parametric_Geometry"] = Module["asm"]["kf"]).apply(null, arguments);
+};
+
+var _GS_Show_Parametric_Geometry = Module["_GS_Show_Parametric_Geometry"] = function() {
+ return (_GS_Show_Parametric_Geometry = Module["_GS_Show_Parametric_Geometry"] = Module["asm"]["lf"]).apply(null, arguments);
+};
+
+var _GS_Resize_By_Key = Module["_GS_Resize_By_Key"] = function() {
+ return (_GS_Resize_By_Key = Module["_GS_Resize_By_Key"] = Module["asm"]["mf"]).apply(null, arguments);
+};
+
+var _GS_Show_Key_Type = Module["_GS_Show_Key_Type"] = function() {
+ return (_GS_Show_Key_Type = Module["_GS_Show_Key_Type"] = Module["asm"]["nf"]).apply(null, arguments);
+};
+
+var _GS_Is_Valid_Key = Module["_GS_Is_Valid_Key"] = function() {
+ return (_GS_Is_Valid_Key = Module["_GS_Is_Valid_Key"] = Module["asm"]["of"]).apply(null, arguments);
+};
+
+var _GS_Show_Owner_By_Key = Module["_GS_Show_Owner_By_Key"] = function() {
+ return (_GS_Show_Owner_By_Key = Module["_GS_Show_Owner_By_Key"] = Module["asm"]["pf"]).apply(null, arguments);
+};
+
+var _GS_Open_Segment = Module["_GS_Open_Segment"] = function() {
+ return (_GS_Open_Segment = Module["_GS_Open_Segment"] = Module["asm"]["qf"]).apply(null, arguments);
+};
+
+var _GS_Open_Segment_By_Key = Module["_GS_Open_Segment_By_Key"] = function() {
+ return (_GS_Open_Segment_By_Key = Module["_GS_Open_Segment_By_Key"] = Module["asm"]["rf"]).apply(null, arguments);
+};
+
+var _GS_Close_Segment = Module["_GS_Close_Segment"] = function() {
+ return (_GS_Close_Segment = Module["_GS_Close_Segment"] = Module["asm"]["sf"]).apply(null, arguments);
+};
+
+var _GS_Delete_Segment = Module["_GS_Delete_Segment"] = function() {
+ return (_GS_Delete_Segment = Module["_GS_Delete_Segment"] = Module["asm"]["tf"]).apply(null, arguments);
+};
+
+var _GS_Clear_Attributes = Module["_GS_Clear_Attributes"] = function() {
+ return (_GS_Clear_Attributes = Module["_GS_Clear_Attributes"] = Module["asm"]["uf"]).apply(null, arguments);
+};
+
+var _GS_Clear_Attributes_By_Key = Module["_GS_Clear_Attributes_By_Key"] = function() {
+ return (_GS_Clear_Attributes_By_Key = Module["_GS_Clear_Attributes_By_Key"] = Module["asm"]["vf"]).apply(null, arguments);
+};
+
+var _GS_Clear_Includes = Module["_GS_Clear_Includes"] = function() {
+ return (_GS_Clear_Includes = Module["_GS_Clear_Includes"] = Module["asm"]["wf"]).apply(null, arguments);
+};
+
+var _GS_Clear_Includes_By_Key = Module["_GS_Clear_Includes_By_Key"] = function() {
+ return (_GS_Clear_Includes_By_Key = Module["_GS_Clear_Includes_By_Key"] = Module["asm"]["xf"]).apply(null, arguments);
+};
+
+var _GS_Clear_Styles = Module["_GS_Clear_Styles"] = function() {
+ return (_GS_Clear_Styles = Module["_GS_Clear_Styles"] = Module["asm"]["yf"]).apply(null, arguments);
+};
+
+var _GS_Clear_Styles_By_Key = Module["_GS_Clear_Styles_By_Key"] = function() {
+ return (_GS_Clear_Styles_By_Key = Module["_GS_Clear_Styles_By_Key"] = Module["asm"]["zf"]).apply(null, arguments);
+};
+
+var _GS_Clear_Subsegments = Module["_GS_Clear_Subsegments"] = function() {
+ return (_GS_Clear_Subsegments = Module["_GS_Clear_Subsegments"] = Module["asm"]["Af"]).apply(null, arguments);
+};
+
+var _GS_Clear_Subsegments_By_Key = Module["_GS_Clear_Subsegments_By_Key"] = function() {
+ return (_GS_Clear_Subsegments_By_Key = Module["_GS_Clear_Subsegments_By_Key"] = Module["asm"]["Bf"]).apply(null, arguments);
+};
+
+var _GS_Clear_Data = Module["_GS_Clear_Data"] = function() {
+ return (_GS_Clear_Data = Module["_GS_Clear_Data"] = Module["asm"]["Cf"]).apply(null, arguments);
+};
+
+var _GS_Clear_Data_By_Key = Module["_GS_Clear_Data_By_Key"] = function() {
+ return (_GS_Clear_Data_By_Key = Module["_GS_Clear_Data_By_Key"] = Module["asm"]["Df"]).apply(null, arguments);
+};
+
+var _GS_Clear_All = Module["_GS_Clear_All"] = function() {
+ return (_GS_Clear_All = Module["_GS_Clear_All"] = Module["asm"]["Ef"]).apply(null, arguments);
+};
+
+var _GS_Clear_All_By_Key = Module["_GS_Clear_All_By_Key"] = function() {
+ return (_GS_Clear_All_By_Key = Module["_GS_Clear_All_By_Key"] = Module["asm"]["Ff"]).apply(null, arguments);
+};
+
+var _GS_Delete_By_Key = Module["_GS_Delete_By_Key"] = function() {
+ return (_GS_Delete_By_Key = Module["_GS_Delete_By_Key"] = Module["asm"]["Gf"]).apply(null, arguments);
+};
+
+var _GS_Clear_Geometry = Module["_GS_Clear_Geometry"] = function() {
+ return (_GS_Clear_Geometry = Module["_GS_Clear_Geometry"] = Module["asm"]["Hf"]).apply(null, arguments);
+};
+
+var _GS_Clear_Geometry_By_Key = Module["_GS_Clear_Geometry_By_Key"] = function() {
+ return (_GS_Clear_Geometry_By_Key = Module["_GS_Clear_Geometry_By_Key"] = Module["asm"]["If"]).apply(null, arguments);
+};
+
+var _GS_Include_Segment_By_Key = Module["_GS_Include_Segment_By_Key"] = function() {
+ return (_GS_Include_Segment_By_Key = Module["_GS_Include_Segment_By_Key"] = Module["asm"]["Jf"]).apply(null, arguments);
+};
+
+var _GS_Conditional_Include_By_Key = Module["_GS_Conditional_Include_By_Key"] = function() {
+ return (_GS_Conditional_Include_By_Key = Module["_GS_Conditional_Include_By_Key"] = Module["asm"]["Kf"]).apply(null, arguments);
+};
+
+var _GS_Style_Segment_By_Key = Module["_GS_Style_Segment_By_Key"] = function() {
+ return (_GS_Style_Segment_By_Key = Module["_GS_Style_Segment_By_Key"] = Module["asm"]["Lf"]).apply(null, arguments);
+};
+
+var _GS_Conditional_Style_By_Key = Module["_GS_Conditional_Style_By_Key"] = function() {
+ return (_GS_Conditional_Style_By_Key = Module["_GS_Conditional_Style_By_Key"] = Module["asm"]["Mf"]).apply(null, arguments);
+};
+
+var _GS_Show_Subsegment_Count = Module["_GS_Show_Subsegment_Count"] = function() {
+ return (_GS_Show_Subsegment_Count = Module["_GS_Show_Subsegment_Count"] = Module["asm"]["Nf"]).apply(null, arguments);
+};
+
+var _GS_Show_Subsegment = Module["_GS_Show_Subsegment"] = function() {
+ return (_GS_Show_Subsegment = Module["_GS_Show_Subsegment"] = Module["asm"]["Of"]).apply(null, arguments);
+};
+
+var _GS_Show_All_Subsegment_Count = Module["_GS_Show_All_Subsegment_Count"] = function() {
+ return (_GS_Show_All_Subsegment_Count = Module["_GS_Show_All_Subsegment_Count"] = Module["asm"]["Pf"]).apply(null, arguments);
+};
+
+var _GS_Show_Subsegment_List = Module["_GS_Show_Subsegment_List"] = function() {
+ return (_GS_Show_Subsegment_List = Module["_GS_Show_Subsegment_List"] = Module["asm"]["Qf"]).apply(null, arguments);
+};
+
+var _GS_Show_All_Subsegment_List = Module["_GS_Show_All_Subsegment_List"] = function() {
+ return (_GS_Show_All_Subsegment_List = Module["_GS_Show_All_Subsegment_List"] = Module["asm"]["Rf"]).apply(null, arguments);
+};
+
+var _GS_Show_Segment_Name = Module["_GS_Show_Segment_Name"] = function() {
+ return (_GS_Show_Segment_Name = Module["_GS_Show_Segment_Name"] = Module["asm"]["Sf"]).apply(null, arguments);
+};
+
+var _GS_Show_Segment_Path = Module["_GS_Show_Segment_Path"] = function() {
+ return (_GS_Show_Segment_Path = Module["_GS_Show_Segment_Path"] = Module["asm"]["Tf"]).apply(null, arguments);
+};
+
+var _GS_Show_Attribute_Count = Module["_GS_Show_Attribute_Count"] = function() {
+ return (_GS_Show_Attribute_Count = Module["_GS_Show_Attribute_Count"] = Module["asm"]["Uf"]).apply(null, arguments);
+};
+
+var _GS_Show_Attribute_List = Module["_GS_Show_Attribute_List"] = function() {
+ return (_GS_Show_Attribute_List = Module["_GS_Show_Attribute_List"] = Module["asm"]["Vf"]).apply(null, arguments);
+};
+
+var _GS_Show_Attrubute = Module["_GS_Show_Attrubute"] = function() {
+ return (_GS_Show_Attrubute = Module["_GS_Show_Attrubute"] = Module["asm"]["Wf"]).apply(null, arguments);
+};
+
+var _GS_Show_Geometry_Count = Module["_GS_Show_Geometry_Count"] = function() {
+ return (_GS_Show_Geometry_Count = Module["_GS_Show_Geometry_Count"] = Module["asm"]["Xf"]).apply(null, arguments);
+};
+
+var _GS_Show_Geometry_List = Module["_GS_Show_Geometry_List"] = function() {
+ return (_GS_Show_Geometry_List = Module["_GS_Show_Geometry_List"] = Module["asm"]["Yf"]).apply(null, arguments);
+};
+
+var _GS_Show_Geometry = Module["_GS_Show_Geometry"] = function() {
+ return (_GS_Show_Geometry = Module["_GS_Show_Geometry"] = Module["asm"]["Zf"]).apply(null, arguments);
+};
+
+var _GS_Show_Include_Count = Module["_GS_Show_Include_Count"] = function() {
+ return (_GS_Show_Include_Count = Module["_GS_Show_Include_Count"] = Module["asm"]["_f"]).apply(null, arguments);
+};
+
+var _GS_Show_Include_List = Module["_GS_Show_Include_List"] = function() {
+ return (_GS_Show_Include_List = Module["_GS_Show_Include_List"] = Module["asm"]["$f"]).apply(null, arguments);
+};
+
+var _GS_Show_Include = Module["_GS_Show_Include"] = function() {
+ return (_GS_Show_Include = Module["_GS_Show_Include"] = Module["asm"]["ag"]).apply(null, arguments);
+};
+
+var _GS_Show_Include_Segment = Module["_GS_Show_Include_Segment"] = function() {
+ return (_GS_Show_Include_Segment = Module["_GS_Show_Include_Segment"] = Module["asm"]["bg"]).apply(null, arguments);
+};
+
+var _GS_Show_Included_Count = Module["_GS_Show_Included_Count"] = function() {
+ return (_GS_Show_Included_Count = Module["_GS_Show_Included_Count"] = Module["asm"]["cg"]).apply(null, arguments);
+};
+
+var _GS_Show_Included_List = Module["_GS_Show_Included_List"] = function() {
+ return (_GS_Show_Included_List = Module["_GS_Show_Included_List"] = Module["asm"]["dg"]).apply(null, arguments);
+};
+
+var _GS_Show_Style_Count = Module["_GS_Show_Style_Count"] = function() {
+ return (_GS_Show_Style_Count = Module["_GS_Show_Style_Count"] = Module["asm"]["eg"]).apply(null, arguments);
+};
+
+var _GS_Show_Style_List = Module["_GS_Show_Style_List"] = function() {
+ return (_GS_Show_Style_List = Module["_GS_Show_Style_List"] = Module["asm"]["fg"]).apply(null, arguments);
+};
+
+var _GS_Show_Style = Module["_GS_Show_Style"] = function() {
+ return (_GS_Show_Style = Module["_GS_Show_Style"] = Module["asm"]["gg"]).apply(null, arguments);
+};
+
+var _GS_Show_Style_Segment = Module["_GS_Show_Style_Segment"] = function() {
+ return (_GS_Show_Style_Segment = Module["_GS_Show_Style_Segment"] = Module["asm"]["hg"]).apply(null, arguments);
+};
+
+var _GS_Show_Styled_Count = Module["_GS_Show_Styled_Count"] = function() {
+ return (_GS_Show_Styled_Count = Module["_GS_Show_Styled_Count"] = Module["asm"]["ig"]).apply(null, arguments);
+};
+
+var _GS_Show_Styled_List = Module["_GS_Show_Styled_List"] = function() {
+ return (_GS_Show_Styled_List = Module["_GS_Show_Styled_List"] = Module["asm"]["jg"]).apply(null, arguments);
+};
+
+var _GS_Segment_Exists = Module["_GS_Segment_Exists"] = function() {
+ return (_GS_Segment_Exists = Module["_GS_Segment_Exists"] = Module["asm"]["kg"]).apply(null, arguments);
+};
+
+var _GS_Rename_Segment = Module["_GS_Rename_Segment"] = function() {
+ return (_GS_Rename_Segment = Module["_GS_Rename_Segment"] = Module["asm"]["lg"]).apply(null, arguments);
+};
+
+var _GS_Rename_Segment_By_Key = Module["_GS_Rename_Segment_By_Key"] = function() {
+ return (_GS_Rename_Segment_By_Key = Module["_GS_Rename_Segment_By_Key"] = Module["asm"]["mg"]).apply(null, arguments);
+};
+
+var _GS_Move_Key = Module["_GS_Move_Key"] = function() {
+ return (_GS_Move_Key = Module["_GS_Move_Key"] = Module["asm"]["ng"]).apply(null, arguments);
+};
+
+var _GS_Move_Key_By_Key = Module["_GS_Move_Key_By_Key"] = function() {
+ return (_GS_Move_Key_By_Key = Module["_GS_Move_Key_By_Key"] = Module["asm"]["og"]).apply(null, arguments);
+};
+
+var _GS_Set_Key_Index = Module["_GS_Set_Key_Index"] = function() {
+ return (_GS_Set_Key_Index = Module["_GS_Set_Key_Index"] = Module["asm"]["pg"]).apply(null, arguments);
+};
+
+var _GS_Show_Key_Index = Module["_GS_Show_Key_Index"] = function() {
+ return (_GS_Show_Key_Index = Module["_GS_Show_Key_Index"] = Module["asm"]["qg"]).apply(null, arguments);
+};
+
+var _GS_Show_Key_Tag = Module["_GS_Show_Key_Tag"] = function() {
+ return (_GS_Show_Key_Tag = Module["_GS_Show_Key_Tag"] = Module["asm"]["rg"]).apply(null, arguments);
+};
+
+var _GS_Add_Property_Boolean = Module["_GS_Add_Property_Boolean"] = function() {
+ return (_GS_Add_Property_Boolean = Module["_GS_Add_Property_Boolean"] = Module["asm"]["sg"]).apply(null, arguments);
+};
+
+var _GS_Add_Property_Integer = Module["_GS_Add_Property_Integer"] = function() {
+ return (_GS_Add_Property_Integer = Module["_GS_Add_Property_Integer"] = Module["asm"]["tg"]).apply(null, arguments);
+};
+
+var _GS_Add_Property_Double = Module["_GS_Add_Property_Double"] = function() {
+ return (_GS_Add_Property_Double = Module["_GS_Add_Property_Double"] = Module["asm"]["ug"]).apply(null, arguments);
+};
+
+var _GS_Add_Property_Double_By_Pointer = Module["_GS_Add_Property_Double_By_Pointer"] = function() {
+ return (_GS_Add_Property_Double_By_Pointer = Module["_GS_Add_Property_Double_By_Pointer"] = Module["asm"]["vg"]).apply(null, arguments);
+};
+
+var _GS_Add_Property_String = Module["_GS_Add_Property_String"] = function() {
+ return (_GS_Add_Property_String = Module["_GS_Add_Property_String"] = Module["asm"]["wg"]).apply(null, arguments);
+};
+
+var _GS_Add_Property_Json = Module["_GS_Add_Property_Json"] = function() {
+ return (_GS_Add_Property_Json = Module["_GS_Add_Property_Json"] = Module["asm"]["xg"]).apply(null, arguments);
+};
+
+var _GS_Show_Property_Type = Module["_GS_Show_Property_Type"] = function() {
+ return (_GS_Show_Property_Type = Module["_GS_Show_Property_Type"] = Module["asm"]["yg"]).apply(null, arguments);
+};
+
+var _GS_Show_Property_Boolean = Module["_GS_Show_Property_Boolean"] = function() {
+ return (_GS_Show_Property_Boolean = Module["_GS_Show_Property_Boolean"] = Module["asm"]["zg"]).apply(null, arguments);
+};
+
+var _GS_Show_Property_Integer = Module["_GS_Show_Property_Integer"] = function() {
+ return (_GS_Show_Property_Integer = Module["_GS_Show_Property_Integer"] = Module["asm"]["Ag"]).apply(null, arguments);
+};
+
+var _GS_Show_Property_Double = Module["_GS_Show_Property_Double"] = function() {
+ return (_GS_Show_Property_Double = Module["_GS_Show_Property_Double"] = Module["asm"]["Bg"]).apply(null, arguments);
+};
+
+var _GS_Show_Property_String_Length = Module["_GS_Show_Property_String_Length"] = function() {
+ return (_GS_Show_Property_String_Length = Module["_GS_Show_Property_String_Length"] = Module["asm"]["Cg"]).apply(null, arguments);
+};
+
+var _GS_Show_Property_String = Module["_GS_Show_Property_String"] = function() {
+ return (_GS_Show_Property_String = Module["_GS_Show_Property_String"] = Module["asm"]["Dg"]).apply(null, arguments);
+};
+
+var _GS_Property_Exists = Module["_GS_Property_Exists"] = function() {
+ return (_GS_Property_Exists = Module["_GS_Property_Exists"] = Module["asm"]["Eg"]).apply(null, arguments);
+};
+
+var _GS_Remove_Property = Module["_GS_Remove_Property"] = function() {
+ return (_GS_Remove_Property = Module["_GS_Remove_Property"] = Module["asm"]["Fg"]).apply(null, arguments);
+};
+
+var _GS_Remove_Property_By_Index = Module["_GS_Remove_Property_By_Index"] = function() {
+ return (_GS_Remove_Property_By_Index = Module["_GS_Remove_Property_By_Index"] = Module["asm"]["Gg"]).apply(null, arguments);
+};
+
+var _GS_Clear_Properties = Module["_GS_Clear_Properties"] = function() {
+ return (_GS_Clear_Properties = Module["_GS_Clear_Properties"] = Module["asm"]["Hg"]).apply(null, arguments);
+};
+
+var _GS_Show_Property_Count = Module["_GS_Show_Property_Count"] = function() {
+ return (_GS_Show_Property_Count = Module["_GS_Show_Property_Count"] = Module["asm"]["Ig"]).apply(null, arguments);
+};
+
+var _GS_Show_Property_Type_By_Index = Module["_GS_Show_Property_Type_By_Index"] = function() {
+ return (_GS_Show_Property_Type_By_Index = Module["_GS_Show_Property_Type_By_Index"] = Module["asm"]["Jg"]).apply(null, arguments);
+};
+
+var _GS_Show_Property_Length_By_Index = Module["_GS_Show_Property_Length_By_Index"] = function() {
+ return (_GS_Show_Property_Length_By_Index = Module["_GS_Show_Property_Length_By_Index"] = Module["asm"]["Kg"]).apply(null, arguments);
+};
+
+var _GS_Show_Property_By_Index = Module["_GS_Show_Property_By_Index"] = function() {
+ return (_GS_Show_Property_By_Index = Module["_GS_Show_Property_By_Index"] = Module["asm"]["Lg"]).apply(null, arguments);
+};
+
+var _GS_Show_Key_By_Id = Module["_GS_Show_Key_By_Id"] = function() {
+ return (_GS_Show_Key_By_Id = Module["_GS_Show_Key_By_Id"] = Module["asm"]["Mg"]).apply(null, arguments);
+};
+
+var _GS_Show_Key_By_Name = Module["_GS_Show_Key_By_Name"] = function() {
+ return (_GS_Show_Key_By_Name = Module["_GS_Show_Key_By_Name"] = Module["asm"]["Ng"]).apply(null, arguments);
+};
+
+var _GS_Open_Geometry = Module["_GS_Open_Geometry"] = function() {
+ return (_GS_Open_Geometry = Module["_GS_Open_Geometry"] = Module["asm"]["Og"]).apply(null, arguments);
+};
+
+var _GS_Close_Geometry = Module["_GS_Close_Geometry"] = function() {
+ return (_GS_Close_Geometry = Module["_GS_Close_Geometry"] = Module["asm"]["Pg"]).apply(null, arguments);
+};
+
+var _GS_Compute_Path = Module["_GS_Compute_Path"] = function() {
+ return (_GS_Compute_Path = Module["_GS_Compute_Path"] = Module["asm"]["Qg"]).apply(null, arguments);
+};
+
+var _GS_Compute_Coordinates_By_Key = Module["_GS_Compute_Coordinates_By_Key"] = function() {
+ return (_GS_Compute_Coordinates_By_Key = Module["_GS_Compute_Coordinates_By_Key"] = Module["asm"]["Rg"]).apply(null, arguments);
+};
+
+var _GS_Compute_Coordinates_By_Path = Module["_GS_Compute_Coordinates_By_Path"] = function() {
+ return (_GS_Compute_Coordinates_By_Path = Module["_GS_Compute_Coordinates_By_Path"] = Module["asm"]["Sg"]).apply(null, arguments);
+};
+
+var _GS_DCompute_Coordinates_By_Key = Module["_GS_DCompute_Coordinates_By_Key"] = function() {
+ return (_GS_DCompute_Coordinates_By_Key = Module["_GS_DCompute_Coordinates_By_Key"] = Module["asm"]["Tg"]).apply(null, arguments);
+};
+
+var _GS_Compute_Boundingbox_By_Key = Module["_GS_Compute_Boundingbox_By_Key"] = function() {
+ return (_GS_Compute_Boundingbox_By_Key = Module["_GS_Compute_Boundingbox_By_Key"] = Module["asm"]["Ug"]).apply(null, arguments);
+};
+
+var _GS_Compute_Boundingbox_With_Visibility_By_Key = Module["_GS_Compute_Boundingbox_With_Visibility_By_Key"] = function() {
+ return (_GS_Compute_Boundingbox_With_Visibility_By_Key = Module["_GS_Compute_Boundingbox_With_Visibility_By_Key"] = Module["asm"]["Vg"]).apply(null, arguments);
+};
+
+var _GS_Compute_View_Boundingbox_By_Key = Module["_GS_Compute_View_Boundingbox_By_Key"] = function() {
+ return (_GS_Compute_View_Boundingbox_By_Key = Module["_GS_Compute_View_Boundingbox_By_Key"] = Module["asm"]["Wg"]).apply(null, arguments);
+};
+
+var _GS_Compute_View_Boundingbox_By_Keys = Module["_GS_Compute_View_Boundingbox_By_Keys"] = function() {
+ return (_GS_Compute_View_Boundingbox_By_Keys = Module["_GS_Compute_View_Boundingbox_By_Keys"] = Module["asm"]["Xg"]).apply(null, arguments);
+};
+
+var _GS_Compute_View_Boundingboxes_By_Keys = Module["_GS_Compute_View_Boundingboxes_By_Keys"] = function() {
+ return (_GS_Compute_View_Boundingboxes_By_Keys = Module["_GS_Compute_View_Boundingboxes_By_Keys"] = Module["asm"]["Yg"]).apply(null, arguments);
+};
+
+var _GS_Compute_Geometry_Boundingbox_By_Key = Module["_GS_Compute_Geometry_Boundingbox_By_Key"] = function() {
+ return (_GS_Compute_Geometry_Boundingbox_By_Key = Module["_GS_Compute_Geometry_Boundingbox_By_Key"] = Module["asm"]["Zg"]).apply(null, arguments);
+};
+
+var _GS_Compute_Segment_Boundingbox_By_Key = Module["_GS_Compute_Segment_Boundingbox_By_Key"] = function() {
+ return (_GS_Compute_Segment_Boundingbox_By_Key = Module["_GS_Compute_Segment_Boundingbox_By_Key"] = Module["asm"]["_g"]).apply(null, arguments);
+};
+
+var _GS_Clear_Segment_Boundingbox_By_Key = Module["_GS_Clear_Segment_Boundingbox_By_Key"] = function() {
+ return (_GS_Clear_Segment_Boundingbox_By_Key = Module["_GS_Clear_Segment_Boundingbox_By_Key"] = Module["asm"]["$g"]).apply(null, arguments);
+};
+
+var _GS_Show_BoundingBox_By_Key = Module["_GS_Show_BoundingBox_By_Key"] = function() {
+ return (_GS_Show_BoundingBox_By_Key = Module["_GS_Show_BoundingBox_By_Key"] = Module["asm"]["ah"]).apply(null, arguments);
+};
+
+var _GS_Compute_Selection_By_Key = Module["_GS_Compute_Selection_By_Key"] = function() {
+ return (_GS_Compute_Selection_By_Key = Module["_GS_Compute_Selection_By_Key"] = Module["asm"]["bh"]).apply(null, arguments);
+};
+
+var _GS_Compute_Selection_By_Area = Module["_GS_Compute_Selection_By_Area"] = function() {
+ return (_GS_Compute_Selection_By_Area = Module["_GS_Compute_Selection_By_Area"] = Module["asm"]["ch"]).apply(null, arguments);
+};
+
+var _GS_Compute_Collision_By_Keys = Module["_GS_Compute_Collision_By_Keys"] = function() {
+ return (_GS_Compute_Collision_By_Keys = Module["_GS_Compute_Collision_By_Keys"] = Module["asm"]["dh"]).apply(null, arguments);
+};
+
+var _GS_Compute_Collision_By_Key = Module["_GS_Compute_Collision_By_Key"] = function() {
+ return (_GS_Compute_Collision_By_Key = Module["_GS_Compute_Collision_By_Key"] = Module["asm"]["eh"]).apply(null, arguments);
+};
+
+var _GS_Show_Selection_Count = Module["_GS_Show_Selection_Count"] = function() {
+ return (_GS_Show_Selection_Count = Module["_GS_Show_Selection_Count"] = Module["asm"]["fh"]).apply(null, arguments);
+};
+
+var _GS_Show_Selection_Element = Module["_GS_Show_Selection_Element"] = function() {
+ return (_GS_Show_Selection_Element = Module["_GS_Show_Selection_Element"] = Module["asm"]["gh"]).apply(null, arguments);
+};
+
+var _GS_Show_Selection_Path = Module["_GS_Show_Selection_Path"] = function() {
+ return (_GS_Show_Selection_Path = Module["_GS_Show_Selection_Path"] = Module["asm"]["hh"]).apply(null, arguments);
+};
+
+var _GS_Show_Selection_Path_By_Keys = Module["_GS_Show_Selection_Path_By_Keys"] = function() {
+ return (_GS_Show_Selection_Path_By_Keys = Module["_GS_Show_Selection_Path_By_Keys"] = Module["asm"]["ih"]).apply(null, arguments);
+};
+
+var _GS_Show_Selection_Position = Module["_GS_Show_Selection_Position"] = function() {
+ return (_GS_Show_Selection_Position = Module["_GS_Show_Selection_Position"] = Module["asm"]["jh"]).apply(null, arguments);
+};
+
+var _GS_Show_Selection_Position_By_Value = Module["_GS_Show_Selection_Position_By_Value"] = function() {
+ return (_GS_Show_Selection_Position_By_Value = Module["_GS_Show_Selection_Position_By_Value"] = Module["asm"]["kh"]).apply(null, arguments);
+};
+
+var _GS_Show_Selection_Param = Module["_GS_Show_Selection_Param"] = function() {
+ return (_GS_Show_Selection_Param = Module["_GS_Show_Selection_Param"] = Module["asm"]["lh"]).apply(null, arguments);
+};
+
+var _GS_Show_Selection_Indexes = Module["_GS_Show_Selection_Indexes"] = function() {
+ return (_GS_Show_Selection_Indexes = Module["_GS_Show_Selection_Indexes"] = Module["asm"]["mh"]).apply(null, arguments);
+};
+
+var _GS_Show_Selection_Test_Info = Module["_GS_Show_Selection_Test_Info"] = function() {
+ return (_GS_Show_Selection_Test_Info = Module["_GS_Show_Selection_Test_Info"] = Module["asm"]["nh"]).apply(null, arguments);
+};
+
+var _GS_Show_Collision_Count = Module["_GS_Show_Collision_Count"] = function() {
+ return (_GS_Show_Collision_Count = Module["_GS_Show_Collision_Count"] = Module["asm"]["oh"]).apply(null, arguments);
+};
+
+var _GS_Show_Collision_Elements = Module["_GS_Show_Collision_Elements"] = function() {
+ return (_GS_Show_Collision_Elements = Module["_GS_Show_Collision_Elements"] = Module["asm"]["ph"]).apply(null, arguments);
+};
+
+var _GS_Show_Collision_Paths = Module["_GS_Show_Collision_Paths"] = function() {
+ return (_GS_Show_Collision_Paths = Module["_GS_Show_Collision_Paths"] = Module["asm"]["qh"]).apply(null, arguments);
+};
+
+var _GS_Show_Collision_Path_By_Keys = Module["_GS_Show_Collision_Path_By_Keys"] = function() {
+ return (_GS_Show_Collision_Path_By_Keys = Module["_GS_Show_Collision_Path_By_Keys"] = Module["asm"]["rh"]).apply(null, arguments);
+};
+
+var _GS_Show_Collision_Position = Module["_GS_Show_Collision_Position"] = function() {
+ return (_GS_Show_Collision_Position = Module["_GS_Show_Collision_Position"] = Module["asm"]["sh"]).apply(null, arguments);
+};
+
+var _GS_Show_Collision_Type = Module["_GS_Show_Collision_Type"] = function() {
+ return (_GS_Show_Collision_Type = Module["_GS_Show_Collision_Type"] = Module["asm"]["th"]).apply(null, arguments);
+};
+
+var _GS_Compute_Visible_By_Key = Module["_GS_Compute_Visible_By_Key"] = function() {
+ return (_GS_Compute_Visible_By_Key = Module["_GS_Compute_Visible_By_Key"] = Module["asm"]["uh"]).apply(null, arguments);
+};
+
+var _GS_Compute_Ray_Test = Module["_GS_Compute_Ray_Test"] = function() {
+ return (_GS_Compute_Ray_Test = Module["_GS_Compute_Ray_Test"] = Module["asm"]["vh"]).apply(null, arguments);
+};
+
+var _GS_Compute_Box_Test = Module["_GS_Compute_Box_Test"] = function() {
+ return (_GS_Compute_Box_Test = Module["_GS_Compute_Box_Test"] = Module["asm"]["wh"]).apply(null, arguments);
+};
+
+var _GS_Compute_Geometry_Distance = Module["_GS_Compute_Geometry_Distance"] = function() {
+ return (_GS_Compute_Geometry_Distance = Module["_GS_Compute_Geometry_Distance"] = Module["asm"]["xh"]).apply(null, arguments);
+};
+
+var _GS_Init_Multithreading_Services = Module["_GS_Init_Multithreading_Services"] = function() {
+ return (_GS_Init_Multithreading_Services = Module["_GS_Init_Multithreading_Services"] = Module["asm"]["yh"]).apply(null, arguments);
+};
+
+var _GS_Fina_Multithreading_Services = Module["_GS_Fina_Multithreading_Services"] = function() {
+ return (_GS_Fina_Multithreading_Services = Module["_GS_Fina_Multithreading_Services"] = Module["asm"]["zh"]).apply(null, arguments);
+};
+
+var _GS_Stream_To_Segment_By_Key_Tt = Module["_GS_Stream_To_Segment_By_Key_Tt"] = function() {
+ return (_GS_Stream_To_Segment_By_Key_Tt = Module["_GS_Stream_To_Segment_By_Key_Tt"] = Module["asm"]["Ah"]).apply(null, arguments);
+};
+
+var _GS_Stream_To_Geometry_Data_By_Keys_Tt = Module["_GS_Stream_To_Geometry_Data_By_Keys_Tt"] = function() {
+ return (_GS_Stream_To_Geometry_Data_By_Keys_Tt = Module["_GS_Stream_To_Geometry_Data_By_Keys_Tt"] = Module["asm"]["Bh"]).apply(null, arguments);
+};
+
+var _GS_Asyn_Update_View_By_Key_Tt = Module["_GS_Asyn_Update_View_By_Key_Tt"] = function() {
+ return (_GS_Asyn_Update_View_By_Key_Tt = Module["_GS_Asyn_Update_View_By_Key_Tt"] = Module["asm"]["Ch"]).apply(null, arguments);
+};
+
+var _GS_Asyn_Update_Geometry_Data_By_Key_Tt = Module["_GS_Asyn_Update_Geometry_Data_By_Key_Tt"] = function() {
+ return (_GS_Asyn_Update_Geometry_Data_By_Key_Tt = Module["_GS_Asyn_Update_Geometry_Data_By_Key_Tt"] = Module["asm"]["Dh"]).apply(null, arguments);
+};
+
+var _GS_Asyn_Buffer_Geometry_By_Key_Tt = Module["_GS_Asyn_Buffer_Geometry_By_Key_Tt"] = function() {
+ return (_GS_Asyn_Buffer_Geometry_By_Key_Tt = Module["_GS_Asyn_Buffer_Geometry_By_Key_Tt"] = Module["asm"]["Eh"]).apply(null, arguments);
+};
+
+var _GS_Compute_Collision_By_Key_Tt = Module["_GS_Compute_Collision_By_Key_Tt"] = function() {
+ return (_GS_Compute_Collision_By_Key_Tt = Module["_GS_Compute_Collision_By_Key_Tt"] = Module["asm"]["Fh"]).apply(null, arguments);
+};
+
+var _GS_Boolean_Intersection_Graph = Module["_GS_Boolean_Intersection_Graph"] = function() {
+ return (_GS_Boolean_Intersection_Graph = Module["_GS_Boolean_Intersection_Graph"] = Module["asm"]["Gh"]).apply(null, arguments);
+};
+
+var _GS_Boolean_Intersect_Polyline_Polygon_Xy = Module["_GS_Boolean_Intersect_Polyline_Polygon_Xy"] = function() {
+ return (_GS_Boolean_Intersect_Polyline_Polygon_Xy = Module["_GS_Boolean_Intersect_Polyline_Polygon_Xy"] = Module["asm"]["Hh"]).apply(null, arguments);
+};
+
+var _GS_Boolean_Intersect_Polygon_Polygon_Xy = Module["_GS_Boolean_Intersect_Polygon_Polygon_Xy"] = function() {
+ return (_GS_Boolean_Intersect_Polygon_Polygon_Xy = Module["_GS_Boolean_Intersect_Polygon_Polygon_Xy"] = Module["asm"]["Ih"]).apply(null, arguments);
+};
+
+var _GS_Boolean_Intersect_Graph_Polygon_Xy = Module["_GS_Boolean_Intersect_Graph_Polygon_Xy"] = function() {
+ return (_GS_Boolean_Intersect_Graph_Polygon_Xy = Module["_GS_Boolean_Intersect_Graph_Polygon_Xy"] = Module["asm"]["Jh"]).apply(null, arguments);
+};
+
+var _GS_Boolean_Subtract_Polygon_Polygon_Xy = Module["_GS_Boolean_Subtract_Polygon_Polygon_Xy"] = function() {
+ return (_GS_Boolean_Subtract_Polygon_Polygon_Xy = Module["_GS_Boolean_Subtract_Polygon_Polygon_Xy"] = Module["asm"]["Kh"]).apply(null, arguments);
+};
+
+var _GS_Boolean_Cut_Polygon_Polygon_Xy = Module["_GS_Boolean_Cut_Polygon_Polygon_Xy"] = function() {
+ return (_GS_Boolean_Cut_Polygon_Polygon_Xy = Module["_GS_Boolean_Cut_Polygon_Polygon_Xy"] = Module["asm"]["Lh"]).apply(null, arguments);
+};
+
+var _GS_Point_QuickSort = Module["_GS_Point_QuickSort"] = function() {
+ return (_GS_Point_QuickSort = Module["_GS_Point_QuickSort"] = Module["asm"]["Mh"]).apply(null, arguments);
+};
+
+var _GS_Triangulate_Polygon = Module["_GS_Triangulate_Polygon"] = function() {
+ return (_GS_Triangulate_Polygon = Module["_GS_Triangulate_Polygon"] = Module["asm"]["Nh"]).apply(null, arguments);
+};
+
+var _GS_DTriangulate_Polygon = Module["_GS_DTriangulate_Polygon"] = function() {
+ return (_GS_DTriangulate_Polygon = Module["_GS_DTriangulate_Polygon"] = Module["asm"]["Oh"]).apply(null, arguments);
+};
+
+var _GS_Compute_Subdivide_Curve_Count = Module["_GS_Compute_Subdivide_Curve_Count"] = function() {
+ return (_GS_Compute_Subdivide_Curve_Count = Module["_GS_Compute_Subdivide_Curve_Count"] = Module["asm"]["Ph"]).apply(null, arguments);
+};
+
+var _GS_Subdivide_Curve = Module["_GS_Subdivide_Curve"] = function() {
+ return (_GS_Subdivide_Curve = Module["_GS_Subdivide_Curve"] = Module["asm"]["Qh"]).apply(null, arguments);
+};
+
+var _Matrix_Det = Module["_Matrix_Det"] = function() {
+ return (_Matrix_Det = Module["_Matrix_Det"] = Module["asm"]["Rh"]).apply(null, arguments);
+};
+
+var _GS_FLT_Vector_Normalize = Module["_GS_FLT_Vector_Normalize"] = function() {
+ return (_GS_FLT_Vector_Normalize = Module["_GS_FLT_Vector_Normalize"] = Module["asm"]["Sh"]).apply(null, arguments);
+};
+
+var _GS_FLT_Vector_Cross = Module["_GS_FLT_Vector_Cross"] = function() {
+ return (_GS_FLT_Vector_Cross = Module["_GS_FLT_Vector_Cross"] = Module["asm"]["Th"]).apply(null, arguments);
+};
+
+var _GS_FLT_Matrix_Multiply = Module["_GS_FLT_Matrix_Multiply"] = function() {
+ return (_GS_FLT_Matrix_Multiply = Module["_GS_FLT_Matrix_Multiply"] = Module["asm"]["Uh"]).apply(null, arguments);
+};
+
+var _GS_FLT_Matrix_Clone = Module["_GS_FLT_Matrix_Clone"] = function() {
+ return (_GS_FLT_Matrix_Clone = Module["_GS_FLT_Matrix_Clone"] = Module["asm"]["Vh"]).apply(null, arguments);
+};
+
+var _GS_FLT_Matrix_Inverse = Module["_GS_FLT_Matrix_Inverse"] = function() {
+ return (_GS_FLT_Matrix_Inverse = Module["_GS_FLT_Matrix_Inverse"] = Module["asm"]["Wh"]).apply(null, arguments);
+};
+
+var _GS_Vector_Normalize = Module["_GS_Vector_Normalize"] = function() {
+ return (_GS_Vector_Normalize = Module["_GS_Vector_Normalize"] = Module["asm"]["Xh"]).apply(null, arguments);
+};
+
+var _GS_Vector_Cross = Module["_GS_Vector_Cross"] = function() {
+ return (_GS_Vector_Cross = Module["_GS_Vector_Cross"] = Module["asm"]["Yh"]).apply(null, arguments);
+};
+
+var _GS_Matrix_Multiply = Module["_GS_Matrix_Multiply"] = function() {
+ return (_GS_Matrix_Multiply = Module["_GS_Matrix_Multiply"] = Module["asm"]["Zh"]).apply(null, arguments);
+};
+
+var _GS_Matrix_Clone = Module["_GS_Matrix_Clone"] = function() {
+ return (_GS_Matrix_Clone = Module["_GS_Matrix_Clone"] = Module["asm"]["_h"]).apply(null, arguments);
+};
+
+var _GS_Matrix_Inverse = Module["_GS_Matrix_Inverse"] = function() {
+ return (_GS_Matrix_Inverse = Module["_GS_Matrix_Inverse"] = Module["asm"]["$h"]).apply(null, arguments);
+};
+
+var _GS_FLT_Point_Add = Module["_GS_FLT_Point_Add"] = function() {
+ return (_GS_FLT_Point_Add = Module["_GS_FLT_Point_Add"] = Module["asm"]["ai"]).apply(null, arguments);
+};
+
+var _GS_FLT_Point_Subtract = Module["_GS_FLT_Point_Subtract"] = function() {
+ return (_GS_FLT_Point_Subtract = Module["_GS_FLT_Point_Subtract"] = Module["asm"]["bi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Point_Is_Same = Module["_GS_FLT_Point_Is_Same"] = function() {
+ return (_GS_FLT_Point_Is_Same = Module["_GS_FLT_Point_Is_Same"] = Module["asm"]["ci"]).apply(null, arguments);
+};
+
+var _GS_FLT_Vector_Module = Module["_GS_FLT_Vector_Module"] = function() {
+ return (_GS_FLT_Vector_Module = Module["_GS_FLT_Vector_Module"] = Module["asm"]["di"]).apply(null, arguments);
+};
+
+var _GS_FLT_Vector_Is_Zero = Module["_GS_FLT_Vector_Is_Zero"] = function() {
+ return (_GS_FLT_Vector_Is_Zero = Module["_GS_FLT_Vector_Is_Zero"] = Module["asm"]["ei"]).apply(null, arguments);
+};
+
+var _GS_FLT_Vector_Include_Angle = Module["_GS_FLT_Vector_Include_Angle"] = function() {
+ return (_GS_FLT_Vector_Include_Angle = Module["_GS_FLT_Vector_Include_Angle"] = Module["asm"]["fi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Vector_Angle = Module["_GS_FLT_Vector_Angle"] = function() {
+ return (_GS_FLT_Vector_Angle = Module["_GS_FLT_Vector_Angle"] = Module["asm"]["gi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Vector_Dot = Module["_GS_FLT_Vector_Dot"] = function() {
+ return (_GS_FLT_Vector_Dot = Module["_GS_FLT_Vector_Dot"] = Module["asm"]["hi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Vector_Angle_With_Normal = Module["_GS_FLT_Vector_Angle_With_Normal"] = function() {
+ return (_GS_FLT_Vector_Angle_With_Normal = Module["_GS_FLT_Vector_Angle_With_Normal"] = Module["asm"]["ii"]).apply(null, arguments);
+};
+
+var _GS_FLT_Vector_Is_Parallel = Module["_GS_FLT_Vector_Is_Parallel"] = function() {
+ return (_GS_FLT_Vector_Is_Parallel = Module["_GS_FLT_Vector_Is_Parallel"] = Module["asm"]["ji"]).apply(null, arguments);
+};
+
+var _GS_FLT_Vector_Reverse = Module["_GS_FLT_Vector_Reverse"] = function() {
+ return (_GS_FLT_Vector_Reverse = Module["_GS_FLT_Vector_Reverse"] = Module["asm"]["ki"]).apply(null, arguments);
+};
+
+var _GS_FLT_Vector_Divide = Module["_GS_FLT_Vector_Divide"] = function() {
+ return (_GS_FLT_Vector_Divide = Module["_GS_FLT_Vector_Divide"] = Module["asm"]["li"]).apply(null, arguments);
+};
+
+var _GS_FLT_Vector_Is_Perpendicular = Module["_GS_FLT_Vector_Is_Perpendicular"] = function() {
+ return (_GS_FLT_Vector_Is_Perpendicular = Module["_GS_FLT_Vector_Is_Perpendicular"] = Module["asm"]["mi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Triangle_Normal = Module["_GS_FLT_Triangle_Normal"] = function() {
+ return (_GS_FLT_Triangle_Normal = Module["_GS_FLT_Triangle_Normal"] = Module["asm"]["ni"]).apply(null, arguments);
+};
+
+var _GS_FLT_Distance_Point = Module["_GS_FLT_Distance_Point"] = function() {
+ return (_GS_FLT_Distance_Point = Module["_GS_FLT_Distance_Point"] = Module["asm"]["oi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Distance_Point_Point = Module["_GS_FLT_Distance_Point_Point"] = function() {
+ return (_GS_FLT_Distance_Point_Point = Module["_GS_FLT_Distance_Point_Point"] = Module["asm"]["pi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Distance_Point_Line = Module["_GS_FLT_Distance_Point_Line"] = function() {
+ return (_GS_FLT_Distance_Point_Line = Module["_GS_FLT_Distance_Point_Line"] = Module["asm"]["qi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Project_Point_To_Line = Module["_GS_FLT_Project_Point_To_Line"] = function() {
+ return (_GS_FLT_Project_Point_To_Line = Module["_GS_FLT_Project_Point_To_Line"] = Module["asm"]["ri"]).apply(null, arguments);
+};
+
+var _GS_FLT_Distance_Point_LineSegment = Module["_GS_FLT_Distance_Point_LineSegment"] = function() {
+ return (_GS_FLT_Distance_Point_LineSegment = Module["_GS_FLT_Distance_Point_LineSegment"] = Module["asm"]["si"]).apply(null, arguments);
+};
+
+var _GS_FLT_Distance_Line_LineSegment = Module["_GS_FLT_Distance_Line_LineSegment"] = function() {
+ return (_GS_FLT_Distance_Line_LineSegment = Module["_GS_FLT_Distance_Line_LineSegment"] = Module["asm"]["ti"]).apply(null, arguments);
+};
+
+var _GS_FLT_Closest_Point = Module["_GS_FLT_Closest_Point"] = function() {
+ return (_GS_FLT_Closest_Point = Module["_GS_FLT_Closest_Point"] = Module["asm"]["ui"]).apply(null, arguments);
+};
+
+var _GS_FLT_Distance_LineSegment_LineSegment = Module["_GS_FLT_Distance_LineSegment_LineSegment"] = function() {
+ return (_GS_FLT_Distance_LineSegment_LineSegment = Module["_GS_FLT_Distance_LineSegment_LineSegment"] = Module["asm"]["vi"]).apply(null, arguments);
+};
+
+var _GS_Vector_Module = Module["_GS_Vector_Module"] = function() {
+ return (_GS_Vector_Module = Module["_GS_Vector_Module"] = Module["asm"]["wi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Intersection_Line_LineSegment = Module["_GS_FLT_Intersection_Line_LineSegment"] = function() {
+ return (_GS_FLT_Intersection_Line_LineSegment = Module["_GS_FLT_Intersection_Line_LineSegment"] = Module["asm"]["xi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Distance_Line_Line_With_Points = Module["_GS_FLT_Distance_Line_Line_With_Points"] = function() {
+ return (_GS_FLT_Distance_Line_Line_With_Points = Module["_GS_FLT_Distance_Line_Line_With_Points"] = Module["asm"]["yi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Distance_Point_Plane = Module["_GS_FLT_Distance_Point_Plane"] = function() {
+ return (_GS_FLT_Distance_Point_Plane = Module["_GS_FLT_Distance_Point_Plane"] = Module["asm"]["zi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Project_Point_To_Plane = Module["_GS_FLT_Project_Point_To_Plane"] = function() {
+ return (_GS_FLT_Project_Point_To_Plane = Module["_GS_FLT_Project_Point_To_Plane"] = Module["asm"]["Ai"]).apply(null, arguments);
+};
+
+var _GS_FLT_Project_Point_to_Triangle = Module["_GS_FLT_Project_Point_to_Triangle"] = function() {
+ return (_GS_FLT_Project_Point_to_Triangle = Module["_GS_FLT_Project_Point_to_Triangle"] = Module["asm"]["Bi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Is_Point_In_LineSegment = Module["_GS_FLT_Is_Point_In_LineSegment"] = function() {
+ return (_GS_FLT_Is_Point_In_LineSegment = Module["_GS_FLT_Is_Point_In_LineSegment"] = Module["asm"]["Ci"]).apply(null, arguments);
+};
+
+var _GS_FLT_Is_Point_In_Triangle = Module["_GS_FLT_Is_Point_In_Triangle"] = function() {
+ return (_GS_FLT_Is_Point_In_Triangle = Module["_GS_FLT_Is_Point_In_Triangle"] = Module["asm"]["Di"]).apply(null, arguments);
+};
+
+var _GS_FLT_Matrix_Multiply_Point = Module["_GS_FLT_Matrix_Multiply_Point"] = function() {
+ return (_GS_FLT_Matrix_Multiply_Point = Module["_GS_FLT_Matrix_Multiply_Point"] = Module["asm"]["Ei"]).apply(null, arguments);
+};
+
+var _GS_FLT_Matrix_Multiply_WPoint = Module["_GS_FLT_Matrix_Multiply_WPoint"] = function() {
+ return (_GS_FLT_Matrix_Multiply_WPoint = Module["_GS_FLT_Matrix_Multiply_WPoint"] = Module["asm"]["Fi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Intersection_Line_Line = Module["_GS_FLT_Intersection_Line_Line"] = function() {
+ return (_GS_FLT_Intersection_Line_Line = Module["_GS_FLT_Intersection_Line_Line"] = Module["asm"]["Gi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Intersection_LineSegment_LineSegment = Module["_GS_FLT_Intersection_LineSegment_LineSegment"] = function() {
+ return (_GS_FLT_Intersection_LineSegment_LineSegment = Module["_GS_FLT_Intersection_LineSegment_LineSegment"] = Module["asm"]["Hi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Intersection_Line_Plane = Module["_GS_FLT_Intersection_Line_Plane"] = function() {
+ return (_GS_FLT_Intersection_Line_Plane = Module["_GS_FLT_Intersection_Line_Plane"] = Module["asm"]["Ii"]).apply(null, arguments);
+};
+
+var _GS_FLT_Intersection_Line_Triangle = Module["_GS_FLT_Intersection_Line_Triangle"] = function() {
+ return (_GS_FLT_Intersection_Line_Triangle = Module["_GS_FLT_Intersection_Line_Triangle"] = Module["asm"]["Ji"]).apply(null, arguments);
+};
+
+var _GS_FLT_Intersection_LineSegment_Triangle = Module["_GS_FLT_Intersection_LineSegment_Triangle"] = function() {
+ return (_GS_FLT_Intersection_LineSegment_Triangle = Module["_GS_FLT_Intersection_LineSegment_Triangle"] = Module["asm"]["Ki"]).apply(null, arguments);
+};
+
+var _GS_FLT_Intersection_LineSegment_Triangle_With_Type = Module["_GS_FLT_Intersection_LineSegment_Triangle_With_Type"] = function() {
+ return (_GS_FLT_Intersection_LineSegment_Triangle_With_Type = Module["_GS_FLT_Intersection_LineSegment_Triangle_With_Type"] = Module["asm"]["Li"]).apply(null, arguments);
+};
+
+var _GS_FLT_Is_Intersecting_Triangle_Triangle_With_Type = Module["_GS_FLT_Is_Intersecting_Triangle_Triangle_With_Type"] = function() {
+ return (_GS_FLT_Is_Intersecting_Triangle_Triangle_With_Type = Module["_GS_FLT_Is_Intersecting_Triangle_Triangle_With_Type"] = Module["asm"]["Mi"]).apply(null, arguments);
+};
+
+var _GS_FLT_Intersection_Ray_Triangle = Module["_GS_FLT_Intersection_Ray_Triangle"] = function() {
+ return (_GS_FLT_Intersection_Ray_Triangle = Module["_GS_FLT_Intersection_Ray_Triangle"] = Module["asm"]["Ni"]).apply(null, arguments);
+};
+
+var _GS_Point_Add = Module["_GS_Point_Add"] = function() {
+ return (_GS_Point_Add = Module["_GS_Point_Add"] = Module["asm"]["Oi"]).apply(null, arguments);
+};
+
+var _GS_Point_Subtract = Module["_GS_Point_Subtract"] = function() {
+ return (_GS_Point_Subtract = Module["_GS_Point_Subtract"] = Module["asm"]["Pi"]).apply(null, arguments);
+};
+
+var _GS_Point_Subtract_By_Index = Module["_GS_Point_Subtract_By_Index"] = function() {
+ return (_GS_Point_Subtract_By_Index = Module["_GS_Point_Subtract_By_Index"] = Module["asm"]["Qi"]).apply(null, arguments);
+};
+
+var _GS_Vector_Is_Zero = Module["_GS_Vector_Is_Zero"] = function() {
+ return (_GS_Vector_Is_Zero = Module["_GS_Vector_Is_Zero"] = Module["asm"]["Ri"]).apply(null, arguments);
+};
+
+var _GS_Vector_Multiply = Module["_GS_Vector_Multiply"] = function() {
+ return (_GS_Vector_Multiply = Module["_GS_Vector_Multiply"] = Module["asm"]["Si"]).apply(null, arguments);
+};
+
+var _GS_Vector_Dot = Module["_GS_Vector_Dot"] = function() {
+ return (_GS_Vector_Dot = Module["_GS_Vector_Dot"] = Module["asm"]["Ti"]).apply(null, arguments);
+};
+
+var _GS_Vector_Divide = Module["_GS_Vector_Divide"] = function() {
+ return (_GS_Vector_Divide = Module["_GS_Vector_Divide"] = Module["asm"]["Ui"]).apply(null, arguments);
+};
+
+var _GS_Vector_Include_Angle = Module["_GS_Vector_Include_Angle"] = function() {
+ return (_GS_Vector_Include_Angle = Module["_GS_Vector_Include_Angle"] = Module["asm"]["Vi"]).apply(null, arguments);
+};
+
+var _GS_Vector_Angle = Module["_GS_Vector_Angle"] = function() {
+ return (_GS_Vector_Angle = Module["_GS_Vector_Angle"] = Module["asm"]["Wi"]).apply(null, arguments);
+};
+
+var _GS_Vector_Angle_With_Normal = Module["_GS_Vector_Angle_With_Normal"] = function() {
+ return (_GS_Vector_Angle_With_Normal = Module["_GS_Vector_Angle_With_Normal"] = Module["asm"]["Xi"]).apply(null, arguments);
+};
+
+var _GS_Vector_Is_Parallel = Module["_GS_Vector_Is_Parallel"] = function() {
+ return (_GS_Vector_Is_Parallel = Module["_GS_Vector_Is_Parallel"] = Module["asm"]["Yi"]).apply(null, arguments);
+};
+
+var _GS_Vector_Reverse = Module["_GS_Vector_Reverse"] = function() {
+ return (_GS_Vector_Reverse = Module["_GS_Vector_Reverse"] = Module["asm"]["Zi"]).apply(null, arguments);
+};
+
+var _GS_Point_Is_Same = Module["_GS_Point_Is_Same"] = function() {
+ return (_GS_Point_Is_Same = Module["_GS_Point_Is_Same"] = Module["asm"]["_i"]).apply(null, arguments);
+};
+
+var _GS_Point_Is_Same_By_Index = Module["_GS_Point_Is_Same_By_Index"] = function() {
+ return (_GS_Point_Is_Same_By_Index = Module["_GS_Point_Is_Same_By_Index"] = Module["asm"]["$i"]).apply(null, arguments);
+};
+
+var _GS_Vector_Is_Same = Module["_GS_Vector_Is_Same"] = function() {
+ return (_GS_Vector_Is_Same = Module["_GS_Vector_Is_Same"] = Module["asm"]["aj"]).apply(null, arguments);
+};
+
+var _GS_Vector_Is_Perpendicular = Module["_GS_Vector_Is_Perpendicular"] = function() {
+ return (_GS_Vector_Is_Perpendicular = Module["_GS_Vector_Is_Perpendicular"] = Module["asm"]["bj"]).apply(null, arguments);
+};
+
+var _GS_Closest_Point = Module["_GS_Closest_Point"] = function() {
+ return (_GS_Closest_Point = Module["_GS_Closest_Point"] = Module["asm"]["cj"]).apply(null, arguments);
+};
+
+var _GS_Distance_Point = Module["_GS_Distance_Point"] = function() {
+ return (_GS_Distance_Point = Module["_GS_Distance_Point"] = Module["asm"]["dj"]).apply(null, arguments);
+};
+
+var _GS_Distance_Point_Point = Module["_GS_Distance_Point_Point"] = function() {
+ return (_GS_Distance_Point_Point = Module["_GS_Distance_Point_Point"] = Module["asm"]["ej"]).apply(null, arguments);
+};
+
+var _GS_Project_Point_To_Line = Module["_GS_Project_Point_To_Line"] = function() {
+ return (_GS_Project_Point_To_Line = Module["_GS_Project_Point_To_Line"] = Module["asm"]["fj"]).apply(null, arguments);
+};
+
+var _GS_Project_Point_To_LineSegment = Module["_GS_Project_Point_To_LineSegment"] = function() {
+ return (_GS_Project_Point_To_LineSegment = Module["_GS_Project_Point_To_LineSegment"] = Module["asm"]["gj"]).apply(null, arguments);
+};
+
+var _GS_Project_Point_To_Plane = Module["_GS_Project_Point_To_Plane"] = function() {
+ return (_GS_Project_Point_To_Plane = Module["_GS_Project_Point_To_Plane"] = Module["asm"]["hj"]).apply(null, arguments);
+};
+
+var _GS_Is_Point_In_Plane = Module["_GS_Is_Point_In_Plane"] = function() {
+ return (_GS_Is_Point_In_Plane = Module["_GS_Is_Point_In_Plane"] = Module["asm"]["ij"]).apply(null, arguments);
+};
+
+var _GS_Is_Point_In_Line_Segment = Module["_GS_Is_Point_In_Line_Segment"] = function() {
+ return (_GS_Is_Point_In_Line_Segment = Module["_GS_Is_Point_In_Line_Segment"] = Module["asm"]["jj"]).apply(null, arguments);
+};
+
+var _GS_Intersection_Line_LineSegment = Module["_GS_Intersection_Line_LineSegment"] = function() {
+ return (_GS_Intersection_Line_LineSegment = Module["_GS_Intersection_Line_LineSegment"] = Module["asm"]["kj"]).apply(null, arguments);
+};
+
+var _GS_Intersection_LineSegment_LineSegment = Module["_GS_Intersection_LineSegment_LineSegment"] = function() {
+ return (_GS_Intersection_LineSegment_LineSegment = Module["_GS_Intersection_LineSegment_LineSegment"] = Module["asm"]["lj"]).apply(null, arguments);
+};
+
+var _GS_Intersection_Line_Plane = Module["_GS_Intersection_Line_Plane"] = function() {
+ return (_GS_Intersection_Line_Plane = Module["_GS_Intersection_Line_Plane"] = Module["asm"]["mj"]).apply(null, arguments);
+};
+
+var _GS_Intersection_Line_Triangle = Module["_GS_Intersection_Line_Triangle"] = function() {
+ return (_GS_Intersection_Line_Triangle = Module["_GS_Intersection_Line_Triangle"] = Module["asm"]["nj"]).apply(null, arguments);
+};
+
+var _GS_Intersection_Plane_Triangle = Module["_GS_Intersection_Plane_Triangle"] = function() {
+ return (_GS_Intersection_Plane_Triangle = Module["_GS_Intersection_Plane_Triangle"] = Module["asm"]["oj"]).apply(null, arguments);
+};
+
+var _GS_Intersection_Triangle_Triangle = Module["_GS_Intersection_Triangle_Triangle"] = function() {
+ return (_GS_Intersection_Triangle_Triangle = Module["_GS_Intersection_Triangle_Triangle"] = Module["asm"]["pj"]).apply(null, arguments);
+};
+
+var _GS_Is_Point_On_Polygon_Xy = Module["_GS_Is_Point_On_Polygon_Xy"] = function() {
+ return (_GS_Is_Point_On_Polygon_Xy = Module["_GS_Is_Point_On_Polygon_Xy"] = Module["asm"]["qj"]).apply(null, arguments);
+};
+
+var _GS_Is_Point_In_Polygon_Xy = Module["_GS_Is_Point_In_Polygon_Xy"] = function() {
+ return (_GS_Is_Point_In_Polygon_Xy = Module["_GS_Is_Point_In_Polygon_Xy"] = Module["asm"]["rj"]).apply(null, arguments);
+};
+
+var _GS_Matrix_Multiply_Point = Module["_GS_Matrix_Multiply_Point"] = function() {
+ return (_GS_Matrix_Multiply_Point = Module["_GS_Matrix_Multiply_Point"] = Module["asm"]["sj"]).apply(null, arguments);
+};
+
+var __emscripten_tls_init = Module["__emscripten_tls_init"] = function() {
+ return (__emscripten_tls_init = Module["__emscripten_tls_init"] = Module["asm"]["tj"]).apply(null, arguments);
+};
+
+var _pthread_self = Module["_pthread_self"] = function() {
+ return (_pthread_self = Module["_pthread_self"] = Module["asm"]["uj"]).apply(null, arguments);
+};
+
+var ___errno_location = Module["___errno_location"] = function() {
+ return (___errno_location = Module["___errno_location"] = Module["asm"]["vj"]).apply(null, arguments);
+};
+
+var __emscripten_thread_init = Module["__emscripten_thread_init"] = function() {
+ return (__emscripten_thread_init = Module["__emscripten_thread_init"] = Module["asm"]["wj"]).apply(null, arguments);
+};
+
+var __emscripten_thread_crashed = Module["__emscripten_thread_crashed"] = function() {
+ return (__emscripten_thread_crashed = Module["__emscripten_thread_crashed"] = Module["asm"]["xj"]).apply(null, arguments);
+};
+
+var _emscripten_run_in_main_runtime_thread_js = Module["_emscripten_run_in_main_runtime_thread_js"] = function() {
+ return (_emscripten_run_in_main_runtime_thread_js = Module["_emscripten_run_in_main_runtime_thread_js"] = Module["asm"]["yj"]).apply(null, arguments);
+};
+
+var _emscripten_dispatch_to_thread_ = Module["_emscripten_dispatch_to_thread_"] = function() {
+ return (_emscripten_dispatch_to_thread_ = Module["_emscripten_dispatch_to_thread_"] = Module["asm"]["zj"]).apply(null, arguments);
+};
+
+var __emscripten_proxy_execute_task_queue = Module["__emscripten_proxy_execute_task_queue"] = function() {
+ return (__emscripten_proxy_execute_task_queue = Module["__emscripten_proxy_execute_task_queue"] = Module["asm"]["Aj"]).apply(null, arguments);
+};
+
+var __emscripten_thread_free_data = Module["__emscripten_thread_free_data"] = function() {
+ return (__emscripten_thread_free_data = Module["__emscripten_thread_free_data"] = Module["asm"]["Bj"]).apply(null, arguments);
+};
+
+var __emscripten_thread_exit = Module["__emscripten_thread_exit"] = function() {
+ return (__emscripten_thread_exit = Module["__emscripten_thread_exit"] = Module["asm"]["Cj"]).apply(null, arguments);
+};
+
+var _malloc = Module["_malloc"] = function() {
+ return (_malloc = Module["_malloc"] = Module["asm"]["Dj"]).apply(null, arguments);
+};
+
+var _free = Module["_free"] = function() {
+ return (_free = Module["_free"] = Module["asm"]["Ej"]).apply(null, arguments);
+};
+
+var _setThrew = Module["_setThrew"] = function() {
+ return (_setThrew = Module["_setThrew"] = Module["asm"]["Fj"]).apply(null, arguments);
 };
 
 var _emscripten_stack_set_limits = Module["_emscripten_stack_set_limits"] = function() {
- return (_emscripten_stack_set_limits = Module["_emscripten_stack_set_limits"] = Module["asm"]["emscripten_stack_set_limits"]).apply(null, arguments);
+ return (_emscripten_stack_set_limits = Module["_emscripten_stack_set_limits"] = Module["asm"]["Gj"]).apply(null, arguments);
 };
 
-var _emscripten_stack_get_free = Module["_emscripten_stack_get_free"] = function() {
- return (_emscripten_stack_get_free = Module["_emscripten_stack_get_free"] = Module["asm"]["emscripten_stack_get_free"]).apply(null, arguments);
+var stackSave = Module["stackSave"] = function() {
+ return (stackSave = Module["stackSave"] = Module["asm"]["Hj"]).apply(null, arguments);
 };
 
-var stackSave = Module["stackSave"] = createExportWrapper("stackSave");
+var stackRestore = Module["stackRestore"] = function() {
+ return (stackRestore = Module["stackRestore"] = Module["asm"]["Ij"]).apply(null, arguments);
+};
 
-var stackRestore = Module["stackRestore"] = createExportWrapper("stackRestore");
+var stackAlloc = Module["stackAlloc"] = function() {
+ return (stackAlloc = Module["stackAlloc"] = Module["asm"]["Jj"]).apply(null, arguments);
+};
 
-var stackAlloc = Module["stackAlloc"] = createExportWrapper("stackAlloc");
+var ___start_em_js = Module["___start_em_js"] = 173768;
 
-var dynCall_jiji = Module["dynCall_jiji"] = createExportWrapper("dynCall_jiji");
-
-var ___start_em_js = Module["___start_em_js"] = 172836;
-
-var ___stop_em_js = Module["___stop_em_js"] = 175605;
+var ___stop_em_js = Module["___stop_em_js"] = 176728;
 
 function invoke_viiii(index, a1, a2, a3, a4) {
  var sp = stackSave();
@@ -7172,14 +6883,6 @@ Module["ExitStatus"] = ExitStatus;
 
 Module["GL"] = GL;
 
-var unexportedRuntimeSymbols = [ "run", "UTF8ArrayToString", "UTF8ToString", "stringToUTF8Array", "stringToUTF8", "lengthBytesUTF8", "addOnPreRun", "addOnInit", "addOnPreMain", "addOnExit", "addOnPostRun", "addRunDependency", "removeRunDependency", "FS_createFolder", "FS_createPath", "FS_createDataFile", "FS_createPreloadedFile", "FS_createLazyFile", "FS_createLink", "FS_createDevice", "FS_unlink", "getLEB", "getFunctionTables", "alignFunctionTables", "registerFunctions", "prettyPrint", "getCompilerSetting", "print", "printErr", "callMain", "abort", "stackAlloc", "stackSave", "stackRestore", "getTempRet0", "setTempRet0", "GROWABLE_HEAP_I8", "GROWABLE_HEAP_U8", "GROWABLE_HEAP_I16", "GROWABLE_HEAP_U16", "GROWABLE_HEAP_I32", "GROWABLE_HEAP_U32", "GROWABLE_HEAP_F32", "GROWABLE_HEAP_F64", "writeStackCookie", "checkStackCookie", "ptrToString", "zeroMemory", "stringToNewUTF8", "exitJS", "getHeapMax", "emscripten_realloc_buffer", "ENV", "ERRNO_CODES", "ERRNO_MESSAGES", "setErrNo", "inetPton4", "inetNtop4", "inetPton6", "inetNtop6", "readSockaddr", "writeSockaddr", "DNS", "getHostByName", "Protocols", "Sockets", "getRandomDevice", "warnOnce", "traverseStack", "UNWIND_CACHE", "convertPCtoSourceLocation", "readAsmConstArgsArray", "readAsmConstArgs", "mainThreadEM_ASM", "jstoi_q", "jstoi_s", "getExecutableName", "listenOnce", "autoResumeAudioContext", "dynCallLegacy", "getDynCaller", "dynCall", "handleException", "runtimeKeepalivePush", "runtimeKeepalivePop", "callUserCallback", "maybeExit", "safeSetTimeout", "asmjsMangle", "asyncLoad", "alignMemory", "mmapAlloc", "writeI53ToI64", "writeI53ToI64Clamped", "writeI53ToI64Signaling", "writeI53ToU64Clamped", "writeI53ToU64Signaling", "readI53FromI64", "readI53FromU64", "convertI32PairToI53", "convertI32PairToI53Checked", "convertU32PairToI53", "getCFunc", "ccall", "cwrap", "uleb128Encode", "sigToWasmTypes", "convertJsFunctionToWasm", "freeTableIndexes", "functionsInTableMap", "getEmptyTableSlot", "updateTableMap", "addFunction", "removeFunction", "reallyNegative", "unSign", "strLen", "reSign", "formatString", "setValue", "getValue", "PATH", "PATH_FS", "intArrayFromString", "intArrayToString", "AsciiToString", "stringToAscii", "UTF16Decoder", "UTF16ToString", "stringToUTF16", "lengthBytesUTF16", "UTF32ToString", "stringToUTF32", "lengthBytesUTF32", "allocateUTF8OnStack", "writeStringToMemory", "writeArrayToMemory", "writeAsciiToMemory", "SYSCALLS", "getSocketFromFD", "getSocketAddress", "JSEvents", "registerKeyEventCallback", "specialHTMLTargets", "maybeCStringToJsString", "findEventTarget", "findCanvasEventTarget", "getBoundingClientRect", "fillMouseEventData", "registerMouseEventCallback", "registerWheelEventCallback", "registerUiEventCallback", "registerFocusEventCallback", "fillDeviceOrientationEventData", "registerDeviceOrientationEventCallback", "fillDeviceMotionEventData", "registerDeviceMotionEventCallback", "screenOrientation", "fillOrientationChangeEventData", "registerOrientationChangeEventCallback", "fillFullscreenChangeEventData", "registerFullscreenChangeEventCallback", "JSEvents_requestFullscreen", "JSEvents_resizeCanvasForFullscreen", "registerRestoreOldStyle", "hideEverythingExceptGivenElement", "restoreHiddenElements", "setLetterbox", "currentFullscreenStrategy", "restoreOldWindowedStyle", "softFullscreenResizeWebGLRenderTarget", "doRequestFullscreen", "fillPointerlockChangeEventData", "registerPointerlockChangeEventCallback", "registerPointerlockErrorEventCallback", "requestPointerLock", "fillVisibilityChangeEventData", "registerVisibilityChangeEventCallback", "registerTouchEventCallback", "fillGamepadEventData", "registerGamepadEventCallback", "registerBeforeUnloadEventCallback", "fillBatteryEventData", "battery", "registerBatteryEventCallback", "setCanvasElementSize", "getCanvasElementSize", "demangle", "demangleAll", "jsStackTrace", "stackTrace", "getEnvStrings", "checkWasiClock", "doReadv", "doWritev", "dlopenMissingError", "setImmediateWrapped", "clearImmediateWrapped", "polyfillSetImmediate", "uncaughtExceptionCount", "exceptionLast", "exceptionCaught", "ExceptionInfo", "exception_addRef", "exception_decRef", "Browser", "setMainLoop", "wget", "FS", "MEMFS", "TTY", "PIPEFS", "SOCKFS", "_setNetworkCallback", "tempFixedLengthArray", "miniTempWebGLFloatBuffers", "heapObjectForWebGLType", "heapAccessShiftForWebGLHeap", "emscriptenWebGLGet", "computeUnpackAlignedImageSize", "emscriptenWebGLGetTexPixelData", "emscriptenWebGLGetUniform", "webglGetUniformLocation", "webglPrepareUniformLocationsBeforeFirstUse", "webglGetLeftBracePos", "emscriptenWebGLGetVertexAttrib", "writeGLArray", "AL", "SDL_unicode", "SDL_ttfContext", "SDL_audio", "SDL", "SDL_gfx", "GLUT", "EGL", "GLFW_Window", "GLFW", "GLEW", "IDBStore", "runAndAbortIfError", "emscriptenWebGLGetIndexed", "ALLOC_NORMAL", "ALLOC_STACK", "allocate", "PThread", "killThread", "cleanupThread", "registerTLSInit", "cancelThread", "spawnThread", "exitOnMainThread", "invokeEntryPoint", "executeNotifiedProxyingQueue" ];
-
-unexportedRuntimeSymbols.forEach(unexportedRuntimeSymbol);
-
-var missingLibrarySymbols = [ "stringToNewUTF8", "inetPton4", "inetNtop4", "inetPton6", "inetNtop6", "readSockaddr", "writeSockaddr", "getHostByName", "traverseStack", "convertPCtoSourceLocation", "mainThreadEM_ASM", "jstoi_s", "listenOnce", "autoResumeAudioContext", "dynCallLegacy", "getDynCaller", "dynCall", "safeSetTimeout", "asmjsMangle", "writeI53ToI64", "writeI53ToI64Clamped", "writeI53ToI64Signaling", "writeI53ToU64Clamped", "writeI53ToU64Signaling", "readI53FromI64", "readI53FromU64", "convertI32PairToI53", "convertU32PairToI53", "reallyNegative", "unSign", "strLen", "reSign", "formatString", "getSocketFromFD", "getSocketAddress", "registerKeyEventCallback", "getBoundingClientRect", "fillMouseEventData", "registerMouseEventCallback", "registerWheelEventCallback", "registerUiEventCallback", "registerFocusEventCallback", "fillDeviceOrientationEventData", "registerDeviceOrientationEventCallback", "fillDeviceMotionEventData", "registerDeviceMotionEventCallback", "screenOrientation", "fillOrientationChangeEventData", "registerOrientationChangeEventCallback", "fillFullscreenChangeEventData", "registerFullscreenChangeEventCallback", "JSEvents_requestFullscreen", "JSEvents_resizeCanvasForFullscreen", "registerRestoreOldStyle", "hideEverythingExceptGivenElement", "restoreHiddenElements", "setLetterbox", "softFullscreenResizeWebGLRenderTarget", "doRequestFullscreen", "fillPointerlockChangeEventData", "registerPointerlockChangeEventCallback", "registerPointerlockErrorEventCallback", "requestPointerLock", "fillVisibilityChangeEventData", "registerVisibilityChangeEventCallback", "registerTouchEventCallback", "fillGamepadEventData", "registerGamepadEventCallback", "registerBeforeUnloadEventCallback", "fillBatteryEventData", "battery", "registerBatteryEventCallback", "setCanvasElementSize", "getCanvasElementSize", "checkWasiClock", "setImmediateWrapped", "clearImmediateWrapped", "polyfillSetImmediate", "ExceptionInfo", "exception_addRef", "exception_decRef", "setMainLoop", "_setNetworkCallback", "emscriptenWebGLGet", "emscriptenWebGLGetUniform", "emscriptenWebGLGetVertexAttrib", "writeGLArray", "SDL_unicode", "SDL_ttfContext", "SDL_audio", "GLFW_Window", "runAndAbortIfError", "emscriptenWebGLGetIndexed" ];
-
-missingLibrarySymbols.forEach(missingLibrarySymbol);
-
 var calledRun;
 
 dependenciesFulfilled = function runCaller() {
@@ -7187,18 +6890,11 @@ dependenciesFulfilled = function runCaller() {
  if (!calledRun) dependenciesFulfilled = runCaller;
 };
 
-function stackCheckInit() {
- assert(!ENVIRONMENT_IS_PTHREAD);
- _emscripten_stack_init();
- writeStackCookie();
-}
-
 function run(args) {
  args = args || arguments_;
  if (runDependencies > 0) {
   return;
  }
- if (!ENVIRONMENT_IS_PTHREAD) stackCheckInit();
  if (ENVIRONMENT_IS_PTHREAD) {
   initRuntime();
   postMessage({
@@ -7217,7 +6913,6 @@ function run(args) {
   if (ABORT) return;
   initRuntime();
   if (Module["onRuntimeInitialized"]) Module["onRuntimeInitialized"]();
-  assert(!Module["_main"], 'compiled without a main, but one is present. if you added it from JS, use Module["onRuntimeInitialized"]');
   postRun();
  }
  if (Module["setStatus"]) {
@@ -7230,34 +6925,6 @@ function run(args) {
   }, 1);
  } else {
   doRun();
- }
- checkStackCookie();
-}
-
-function checkUnflushedContent() {
- var oldOut = out;
- var oldErr = err;
- var has = false;
- out = err = x => {
-  has = true;
- };
- try {
-  _fflush(0);
-  [ "stdout", "stderr" ].forEach(function(name) {
-   var info = FS.analyzePath("/dev/" + name);
-   if (!info) return;
-   var stream = info.object;
-   var rdev = stream.rdev;
-   var tty = TTY.ttys[rdev];
-   if (tty && tty.output && tty.output.length) {
-    has = true;
-   }
-  });
- } catch (e) {}
- out = oldOut;
- err = oldErr;
- if (has) {
-  warnOnce("stdio streams had content in them that was not flushed. you should set EXIT_RUNTIME to 1 (see the FAQ), or make sure to emit a newline when you printf etc.");
  }
 }
 
