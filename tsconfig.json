@@ -1,0 +1,101 @@
+{
+	"compilerOptions": {
+		"outDir": "output/js",
+		// "module": "amd",
+		"target": "es5",
+		"module": "esnext",
+		"strict": true,
+		// 如果使用 webpack 2+ 或 rollup，可以利用 tree-shake:
+		// "module": "es2015",
+		"jsx": "preserve",
+		"importHelpers": true,
+		"moduleResolution": "node",
+		"experimentalDecorators": true,
+		"declaration": true,
+		"declarationDir": "./packages/bimAir/types",
+		// 移除注释
+		"removeComments": true,
+		// 允许编译javascript文件
+		// "allowJs": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"sourceMap": true,
+		"baseUrl": ".",
+		"types": ["webpack-env", "node", "jest"],
+		"typeRoots": [
+			// add path to @types
+			"node_modules/@types"
+		],
+		"paths": {
+			"@/*": ["src/*"],
+			"tslib": ["node_modules/tslib/tslib.d.ts"],
+			"gs-longan": ["packages/longan/src", "node_modules"], // 如果要使用index.tsx的，需要配置这个
+			"gs-longan/*": ["packages/longan/src/*", "node_modules"],
+			"gs-bim-air": ["packages/bimAir/src", "node_modules"], // 如果要使用index.tsx的，需要配置这个
+			"gs-bim-air/*": ["packages/bimAir/src/*", "node_modules"],
+			"gs-test-demo": ["packages/testDemo/src", "node_modules"], // 如果要使用index.tsx的，需要配置这个
+			"gs-test-demo/*": ["packages/testDemo/src/*", "node_modules"]
+		},
+		"lib": [
+			"esnext",
+			"dom",
+			"dom.iterable",
+			"scripthost",
+			"es2015",
+			"es2015.iterable",
+			"es2015.collection",
+			"es2015.symbol.wellknown",
+			"es2015.promise",
+			"es2015.symbol",
+			"es2015.generator"
+		],
+		"strictFunctionTypes": false,
+		"strictNullChecks": false,
+		"noImplicitAny": false,
+		"skipLibCheck": true,
+		"downlevelIteration": true
+	},
+	"include": [
+		"src/*.ts",
+		"src/*.d.ts",
+		"src/*.tsx",
+		"src/*.vue",
+		"src/**/*.ts",
+		"src/**/*.tsx",
+		"src/**/*.vue",
+		"packages/bimAir/src/*.ts",
+		"packages/bimAir/src/*.d.ts",
+		"packages/bimAir/src/*.tsx",
+		"packages/bimAir/src/*.vue",
+		"packages/bimAir/src/**/*.ts",
+		"packages/bimAir/src/**/*.tsx",
+		"packages/bimAir/src/**/*.vue",
+		"src/workers/test.worker.ts",
+		"src/shims-scss.d.ts",
+		"packages/bimAir/api/renderObjectService.ts",
+
+		"tests/**/*.ts",
+		"tests/**/*.tsx"
+	],
+	"exclude": [
+		"node_modules",
+		"output",
+		"public/redist/*.js",
+		"public/redist/*.ts",
+		// "packages/longan/src/longan/gs.viewer.ts"
+	],
+	"types": [
+		"lodash",
+		"src",
+		"src/shims-scss.d.ts",
+		"src/shims-tsx.d.ts",
+		"src/shims-vue.d.ts",
+		"packages",
+		"packages/bimAir/src/",
+		"packages/bimAir/src/shims-scss.d.ts",
+		"packages/bimAir/src/shims-tsx.d.ts",
+		"packages/bimAir/src/shims-vue.d.ts"
+	]
+	//自动识别dTs文件夹里的.d.ts文件
+	//  "strictFunctionTypes": false
+}
