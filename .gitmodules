@@ -1,3 +1,3 @@
 [submodule "packages/testDemo"]
 	path = packages/testDemo
-	url = git@github.com:Joyme20/gs-test-demo.git
+	url = git@gitee.com:graphicstone/gs-test-demo.git

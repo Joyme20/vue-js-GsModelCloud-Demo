@@ -8068,10 +8068,10 @@ gray-matter@^4.0.1:
     section-matter "^1.0.0"
     strip-bom-string "^1.0.0"
 
-gs-bim-air@^0.0.3-0.31:
-  version "0.0.3-0.31"
-  resolved "https://registry.npmjs.org/gs-bim-air/-/gs-bim-air-0.0.3-0.31.tgz#cc4b3425d480421800e0f0e6caa41bdf75864a81"
-  integrity sha512-HHWtMslphp16r3eXBezRDfm505LCLH//1//T0wAUFN2AS+a0VOxL7TlFEzfBShF8LL3RBTrvixPMwuQcS27+WQ==
+gs-bim-air@^0.0.3-0.35:
+  version "0.0.3-0.35"
+  resolved "https://registry.npmjs.org/gs-bim-air/-/gs-bim-air-0.0.3-0.35.tgz#40f5a161153b70843e1652732bbcd8cfba7899f4"
+  integrity sha512-fW9KT25FJpSqUXGR908SsBJVklnRnNF151Ct96ME5rUgL0dZ9zxGf+jMr1up19DjMc5Ay5AbocXZ+nZec91Y4Q==
 
 gzip-size@^6.0.0:
   version "6.0.0"

@@ -42,7 +42,7 @@
     "element-theme-chalk": "^2.12.0",
     "element-ui": "^2.15.9",
     "fabric": "5.2.4",
-    "gs-bim-air": "^0.0.3-0.31",
+    "gs-bim-air": "^0.0.3-0.35",
     "html-webpack-inline-source-plugin": "^0.0.10",
     "html-webpack-plugin": "4.5.0",
     "localforage": "^1.10.0",
